@@ -1,0 +1,25 @@
+# Messages file
+banner:
+  - ""
+  - "  <#2baafb><b>NextPay</b> <gray>v%version%"
+  - "  <gray>A standalone economy plugin"
+  - ""
+  - "  <gray>Main commands:"
+  - "  <#2baafb>/pay <player> <amount> <gray>Pay other players"
+  - "  <#2baafb>/balance <player> <gray> View a player's balance"
+  - "  <#2baafb>/baltop <gray>View richest players"
+  - "  <#2baafb>/economy <give/take/set/clear> <gray>Modify balances"
+  - ""
+
+messages:
+  balance-own: '<gray>You have <green>%%amount%'
+  balance-other: '<#2baafb>%player%<gray> has <green>$%amount%'
+  paid: '<gray>You paid <#2baafb>%player% <green>$%amount%'
+  got-paid: '<#2baafb>%player%<gray> paid you <green>$%amount%'
+  cleared: '<gray>You have cleared <#2baafb>%player%<gray>''s balance'
+  set: '<gray>You have set <#2baafb>%player%<gray>''s balance to <green>$%amount%'
+  removed: '<gray>You have removed <green>$%amount%<gray> from <#2baafb>%player%<gray>''s balance'
+  added: '<gray>You have added <green>%amount% <gray>to <#2baafb>%player%<gray>''s balance'
+
+error:
+  payments-disabled: '<red>This player has payments disabled.'

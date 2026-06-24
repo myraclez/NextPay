@@ -1,0 +1,50 @@
+name: NextPay
+description: $description
+version: '1.0.0'
+
+main: me.myraclez.nextPay.NextPay
+api-version: '1.21.10'
+load: POSTWORLD
+depend: [Vault]
+
+authors: [ myraclez ]
+
+libraries:
+  - com.zaxxer:HikariCP:5.1.0
+  - org.projectlombok:lombok:1.18.44
+  - com.mysql:mysql-connector-j:9.3.0
+
+loadbefore:
+  - DonutOrder
+  - DonutSell
+
+commands:
+  nextpay:
+    description: Main command
+  balance:
+    description: Check balance of any player
+    aliases: [ bal ]
+  pay:
+    description: Pay any player with your own money
+  balancetop:
+    aliases: [ baltop ]
+    description: Open the Baltop GUI
+  moneyhistory:
+    aliases: [ transactionhistory ]
+    description: Open the transaction GUI of any player
+  economy:
+    aliases: [ eco ]
+    description: Admin commands for the economy
+    usage: "Usage: /eco <give/set/take/clear> <player> [amount]"
+
+permissions:
+  nextpay.baltop:
+    default: true
+  nextpay.pay:
+    default: true
+  nextpay.bal:
+    default: true
+  nextpay.history:
+    default: true
+  nextpay.admin:
+    default: op

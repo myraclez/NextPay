@@ -1,0 +1,26 @@
+baltop:
+  title: "<black>Baltop - %page%"
+  format:
+    name: "<gray>%player%"
+    lore:
+      - "<green>$%balance% <white>(#%position%)"
+  # Note that the top 5 rows are reserved for the players heads, only slots 45-53 are available.
+  items:
+    previous:
+      material: ARROW
+      slot: 45
+      name: "<red>Previous Page"
+      lore:
+        - "<gray>Click to go to previous page"
+    refresh:
+      material: PAPER
+      slot: 49
+      name: "<#2baafb>Refresh Page"
+      lore:
+        - "<gray>Click to refresh current page"
+    next:
+      material: ARROW
+      slot: 53
+      name: "<green>Next Page"
+      lore:
+        - "<gray>Click to go to the next page"

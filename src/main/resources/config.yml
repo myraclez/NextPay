@@ -1,0 +1,16 @@
+## Configuration file for NextPay
+
+config-version: 1
+
+database:
+  ## available options: sqlite, mysql
+  type: sqlite
+  ## options for mysql
+  host: ''
+  port: 3306
+  database: ''
+  username: ''
+  password: ''
+  max-pool-size: 10
+
+## General Options
