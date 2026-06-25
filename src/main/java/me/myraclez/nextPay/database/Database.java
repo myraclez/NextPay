@@ -1,6 +1,5 @@
 package me.myraclez.nextPay.database;
 
-import me.myraclez.nextPay.NextPay;
 import me.myraclez.nextPay.model.PlayerSettings;
 
 import java.util.List;

@@ -55,6 +55,7 @@ public class BaltopGUI implements InventoryHolder {
 
 				if (balances == null || balances.isEmpty()) {
 					plugin.getLogger().severe("Balances is null or empty");
+					return;
 				}
 
 				ConfigurationSection next = config.getConfigurationSection("items.next");

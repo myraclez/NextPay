@@ -58,14 +58,11 @@ public class BalanceCommand implements CommandExecutor, TabCompleter {
 	@Override
 	public @Nullable List<String> onTabComplete(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String @NotNull [] strings) {
 		List<String> completions = new ArrayList<>();
-		switch (strings.length) {
-			case 1: {
-				for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
-					if (player.getName().startsWith(strings[0])) {
-						completions.add(player.getName());
-					}
+		if (strings.length == 1) {
+			for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
+				if (player.getName().startsWith(strings[0])) {
+					completions.add(player.getName());
 				}
-				break;
 			}
 		}
 		return completions;

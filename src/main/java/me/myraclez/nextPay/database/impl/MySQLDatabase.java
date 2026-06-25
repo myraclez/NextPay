@@ -21,16 +21,17 @@ public class MySQLDatabase implements Database {
 	@Getter
 	HikariDataSource dataSource;
 	NextPay plugin;
-	private String host;
-	private int port;
-	private String database;
-	private String username;
-	private String password;
+	private final String host;
+	private final int port;
+	private final String database;
+	private final String username;
+	private final String password;
 
 
 	public MySQLDatabase(NextPay plugin) {
 		this.plugin = plugin;
 		ConfigurationSection con = plugin.getConfig().getConfigurationSection("database");
+		assert con != null;
 		host = con.getString("host");
 		port = con.getInt("port");
 		database = con.getString("database");
@@ -265,7 +266,7 @@ public class MySQLDatabase implements Database {
 				try (Connection conn = dataSource.getConnection();
 					 PreparedStatement statement = conn.prepareStatement(sql)) {
 					statement.setString(1, player.toString());
-					try (ResultSet rs = statement.executeQuery();) {
+					try (ResultSet rs = statement.executeQuery()) {
 						if (rs.next()) {
 							boolean payments = rs.getBoolean("payments");
 							boolean notifications = rs.getBoolean("notifications");
@@ -298,7 +299,7 @@ public class MySQLDatabase implements Database {
 		String sql = "SELECT payments FROM npsettings WHERE uuid = ?";
 
 		try (Connection conn = dataSource.getConnection();
-			 PreparedStatement statement = conn.prepareStatement(sql);
+			 PreparedStatement statement = conn.prepareStatement(sql)
 		) {
 			statement.setString(1, String.valueOf(player));
 			try (ResultSet rs = statement.executeQuery()){
@@ -307,7 +308,7 @@ public class MySQLDatabase implements Database {
 				}
 			}
 		} catch (SQLException e) {
-
+			plugin.getLogger().severe("Couldn't get paymentSetting for " + player);
 		}
 		return true;
 	}
@@ -317,7 +318,7 @@ public class MySQLDatabase implements Database {
 		String sql = "SELECT notifications FROM npsettings WHERE uuid = ?";
 
 		try (Connection conn = dataSource.getConnection();
-			 PreparedStatement statement = conn.prepareStatement(sql);
+			 PreparedStatement statement = conn.prepareStatement(sql)
 		) {
 			statement.setString(1, String.valueOf(player));
 			try (ResultSet rs = statement.executeQuery()){
@@ -326,7 +327,7 @@ public class MySQLDatabase implements Database {
 				}
 			}
 		} catch (SQLException e) {
-
+			plugin.getLogger().severe("Couldn't get notificationSetting for " + player);
 		}
 		return true;
 	}

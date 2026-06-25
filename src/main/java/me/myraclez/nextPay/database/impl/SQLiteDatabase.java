@@ -6,7 +6,6 @@ import lombok.Getter;
 import me.myraclez.nextPay.NextPay;
 import me.myraclez.nextPay.database.Database;
 import me.myraclez.nextPay.model.PlayerSettings;
-import org.apache.maven.artifact.repository.metadata.io.xpp3.MetadataXpp3Writer;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;
@@ -38,7 +37,10 @@ public class SQLiteDatabase implements Database {
 		try {
 			File file = new File(plugin.getDataFolder(), "data.db");
 			if (!file.exists()) {
-				file.createNewFile();
+
+				if (!file.createNewFile()) {
+					plugin.getLogger().severe("Failed to create data.db file");
+				}
 			}
 
 			HikariConfig config = new HikariConfig();
@@ -277,7 +279,7 @@ public class SQLiteDatabase implements Database {
 				try (Connection conn = dataSource.getConnection();
 						PreparedStatement statement = conn.prepareStatement(sql)) {
 					statement.setString(1, player.toString());
-					try (ResultSet rs = statement.executeQuery();) {
+					try (ResultSet rs = statement.executeQuery()) {
 						if (rs.next()) {
 							boolean payments = rs.getBoolean("payments");
 							boolean notifications = rs.getBoolean("notifications");

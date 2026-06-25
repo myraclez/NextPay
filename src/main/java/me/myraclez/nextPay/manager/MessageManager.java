@@ -5,17 +5,15 @@ import me.myraclez.nextPay.NextPay;
 import me.myraclez.nextPay.util.ColorUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.NamedTextColor;
-import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
 import java.io.File;
-import java.io.IOException;
 
 public class MessageManager {
 
-	private NextPay plugin;
+	private final NextPay plugin;
 
 	File messageFile;
 	@Getter

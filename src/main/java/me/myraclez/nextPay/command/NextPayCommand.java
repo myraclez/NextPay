@@ -33,7 +33,7 @@ public class NextPayCommand implements CommandExecutor, TabCompleter {
 		} else if (strings.length == 1 && strings[0].equals("reload")) {
 			long time = System.currentTimeMillis();
 			plugin.reload();
-			commandSender.sendMessage(ColorUtil.colorize("<gray>Reloaded configurations in <#2baafb>" + String.valueOf(System.currentTimeMillis() - time) + "ms"));
+			commandSender.sendMessage(ColorUtil.colorize("<gray>Reloaded configurations in <#2baafb>" + (System.currentTimeMillis() - time + "ms")));
 		}
 		return true;
 	}
@@ -43,10 +43,8 @@ public class NextPayCommand implements CommandExecutor, TabCompleter {
 
 		List<String> completions = new ArrayList<>();
 
-		switch (strings.length) {
-			case 1: {
-				completions.add("reload");
-			}
+		if (strings.length == 1) {
+			completions.add("reload");
 		}
 		return completions;
 	}

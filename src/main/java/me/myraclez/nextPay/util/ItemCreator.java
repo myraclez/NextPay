@@ -10,8 +10,8 @@ import java.util.List;
 
 public class ItemCreator {
 
-	private ItemStack itemStack;
-	private ItemMeta itemMeta;
+	private final ItemStack itemStack;
+	private final ItemMeta itemMeta;
 
 	public ItemCreator(Material material, Component displayName, List<Component> lore) {
 		this.itemStack = new ItemStack(material);
@@ -20,26 +20,17 @@ public class ItemCreator {
 		itemMeta.lore(lore);
 	}
 
-	public ItemCreator of(Material material) {
-		this.itemStack = new ItemStack(material);
-		itemMeta = itemStack.getItemMeta();
-		return this;
-	}
-
-	public ItemCreator of(Material material, Component displayName) {
+	public ItemCreator(Material material, Component displayName) {
 		this.itemStack = new ItemStack(material);
 		itemMeta = itemStack.getItemMeta();
 		itemMeta.displayName(displayName);
-		return this;
 	}
 
-	public ItemCreator of(Material material, Component displayName, List<Component> lore) {
+	public ItemCreator(Material material) {
 		this.itemStack = new ItemStack(material);
 		itemMeta = itemStack.getItemMeta();
-		itemMeta.displayName(displayName);
-		itemMeta.lore(lore);
-		return this;
 	}
+
 
 	public ItemCreator withLore(List<Component> lore) {
 		itemMeta.lore(lore);

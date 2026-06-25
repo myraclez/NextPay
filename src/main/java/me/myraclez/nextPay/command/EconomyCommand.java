@@ -34,7 +34,7 @@ public class EconomyCommand implements CommandExecutor, TabCompleter {
 		}
 
 		if (!(player.hasPermission("nextpay.admin"))) {
-			player.sendMessage("You dont have permission to execute this command");
+			player.sendMessage("You don't have permission to execute this command");
 			return true;
 		}
 
@@ -51,14 +51,14 @@ public class EconomyCommand implements CommandExecutor, TabCompleter {
 
 				OfflinePlayer target = Bukkit.getOfflinePlayer(args[1]);
 				if (!target.hasPlayedBefore()) {
-					player.sendMessage(ColorUtil.colorize("&cThis player does exist"));
+					player.sendMessage(ColorUtil.colorize("<red>This player does exist"));
 					return true;
 				}
 				double amount;
 				try {
 					amount = Formatter.deformat(args[2]);
 				} catch (Exception e) {
-					player.sendMessage(ColorUtil.colorize("&cInvalid Amount"));
+					player.sendMessage(ColorUtil.colorize("<red>Invalid Amount"));
 					break;
 				}
 				plugin.getEconomy().depositPlayer(target,  amount);
@@ -72,19 +72,19 @@ public class EconomyCommand implements CommandExecutor, TabCompleter {
 
 				OfflinePlayer target = Bukkit.getOfflinePlayer(args[1]);
 				if (!target.hasPlayedBefore()) {
-					player.sendMessage(ColorUtil.colorize("&cThis player does exist"));
+					player.sendMessage(ColorUtil.colorize("<red>This player does exist"));
 					return true;
 				}
 				double amount;
 				try {
 					amount = Formatter.deformat(args[2]);
 				} catch (Exception e) {
-					player.sendMessage(ColorUtil.colorize("&cInvalid Amount"));
+					player.sendMessage(ColorUtil.colorize("<red>Invalid Amount"));
 					break;
 				}
 
 				if (!plugin.getEconomy().has(target, amount)) {
-					player.sendMessage(ColorUtil.colorize("&cThis player doesn't have enough money"));
+					player.sendMessage(ColorUtil.colorize("<red>This player doesn't have enough money"));
 					return true;
 				}
 
@@ -99,14 +99,14 @@ public class EconomyCommand implements CommandExecutor, TabCompleter {
 
 				OfflinePlayer target = Bukkit.getOfflinePlayer(args[1]);
 				if (!target.hasPlayedBefore()) {
-					player.sendMessage(ColorUtil.colorize("&cThis player does exist"));
+					player.sendMessage(ColorUtil.colorize("<red>This player doesn't exist"));
 					return true;
 				}
 				double amount;
 				try {
 					amount = Formatter.deformat(args[2]);
 				} catch (Exception e) {
-					player.sendMessage(ColorUtil.colorize("&cInvalid amount."));
+					player.sendMessage(ColorUtil.colorize("<red>Invalid amount."));
 					break;
 				}
 
@@ -123,7 +123,7 @@ public class EconomyCommand implements CommandExecutor, TabCompleter {
 
 				OfflinePlayer target = Bukkit.getOfflinePlayer(args[1]);
 				if (!target.hasPlayedBefore()) {
-					player.sendMessage(ColorUtil.colorize("&cThis player does exist"));
+					player.sendMessage(ColorUtil.colorize("<red>This player doesn't exist"));
 					return true;
 				}
 
