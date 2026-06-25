@@ -29,8 +29,8 @@ public class BaltopGUI implements InventoryHolder {
 	private List<Map.Entry<UUID, Double>> balances;
 	private final int SLOTS_PER_PAGE = 45;
 	ConfigurationSection config;
-	private NextPay plugin;
-	private Inventory inventory;
+	private final NextPay plugin;
+	private final Inventory inventory;
 
 	@Getter
 	private int page;
@@ -63,8 +63,8 @@ public class BaltopGUI implements InventoryHolder {
 				}
 
 				ConfigurationSection previous = config.getConfigurationSection("items.previous");
-				if (next != null && !(page <= 1)) {
-					inventory.setItem(next.getInt("slot"), itemFromSection(next));
+				if (previous != null && !(page <= 1)) {
+					inventory.setItem(previous.getInt("slot"), itemFromSection(previous));
 				}
 
 				ConfigurationSection refresh = config.getConfigurationSection("items.refresh");
