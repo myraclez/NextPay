@@ -5,7 +5,9 @@ version: '1.0.0'
 main: me.myraclez.nextPay.NextPay
 api-version: '1.21.10'
 load: POSTWORLD
-depend: [Vault]
+
+softdepend:
+  - Vault
 
 authors: [ myraclez ]
 
