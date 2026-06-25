@@ -80,7 +80,7 @@ public class PayCommand implements CommandExecutor, TabCompleter {
 			new BukkitRunnable() {
 				@Override
 				public void run() {
-					pay(player, target, amount, playerSettings.payments(), playerSettings.isNnotifications());
+					pay(player, target, amount, playerSettings.payments(), playerSettings.notifications());
 				}
 			}.runTask(plugin);
 		});
