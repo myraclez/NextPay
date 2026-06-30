@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>me.myraclez</groupId>
-    <artifactId>nextpay</artifactId>
+    <artifactId>nextpay-core</artifactId>
     <version>1.0.0</version>
     <packaging>pom</packaging>
 

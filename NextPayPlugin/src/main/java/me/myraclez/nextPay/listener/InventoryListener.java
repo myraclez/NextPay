@@ -9,7 +9,7 @@ import org.bukkit.event.inventory.InventoryDragEvent;
 
 public class InventoryListener implements Listener {
 
-	NextPay plugin;
+	private final NextPay plugin;
 
 	public InventoryListener(NextPay plugin) {
 		this.plugin = plugin;

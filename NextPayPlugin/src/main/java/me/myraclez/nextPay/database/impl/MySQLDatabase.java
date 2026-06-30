@@ -19,8 +19,8 @@ import java.util.concurrent.CompletableFuture;
 public class MySQLDatabase implements Database {
 
 	@Getter
-	HikariDataSource dataSource;
-	NextPay plugin;
+	private HikariDataSource dataSource;
+	private final NextPay plugin;
 	private final String host;
 	private final int port;
 	private final String database;

@@ -19,7 +19,7 @@ import java.util.List;
 
 public class EconomyCommand implements CommandExecutor, TabCompleter {
 
-	NextPay plugin;
+	private final NextPay plugin;
 
 	public EconomyCommand(NextPay plugin) {
 		this.plugin = plugin;

@@ -23,8 +23,8 @@ import java.util.logging.Level;
 
 public class PayCommand implements CommandExecutor, TabCompleter {
 
-	final NextPay plugin;
-	NextEconomy economy;
+	private final NextPay plugin;
+	private NextEconomy economy;
 
 	public PayCommand(NextPay plugin) {
 		this.plugin = plugin;

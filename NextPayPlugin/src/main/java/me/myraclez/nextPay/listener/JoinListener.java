@@ -8,7 +8,7 @@ import org.bukkit.event.player.PlayerJoinEvent;
 
 public class JoinListener implements Listener {
 
-	final NextPay plugin;
+	private final NextPay plugin;
 
 	public JoinListener(NextPay pl) {
 		this.plugin = pl;

@@ -8,7 +8,7 @@ import java.io.File;
 
 public class GuiConfigManager {
 
-	NextPay plugin;
+	private final NextPay plugin;
 	@Getter
 	private YamlConfiguration configuration;
 

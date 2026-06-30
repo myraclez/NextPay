@@ -14,7 +14,7 @@ import java.util.List;
 
 public class NextPayCommand implements CommandExecutor, TabCompleter {
 
-	NextPay plugin;
+	private final NextPay plugin;
 
 	public NextPayCommand(NextPay plugin) {
 		this.plugin = plugin;

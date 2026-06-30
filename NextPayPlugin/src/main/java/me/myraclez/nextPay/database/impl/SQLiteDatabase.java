@@ -20,12 +20,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class SQLiteDatabase implements Database {
 
-	Map<UUID, Double> balancesCache = new ConcurrentHashMap<>();
-	Map<UUID, PlayerSettings> settingsCache = new ConcurrentHashMap<>();
+	private  final Map<UUID, Double> balancesCache = new ConcurrentHashMap<>();
+	private  final Map<UUID, PlayerSettings> settingsCache = new ConcurrentHashMap<>();
 
 	@Getter
-	HikariDataSource dataSource;
-	NextPay plugin;
+	private HikariDataSource dataSource;
+	private final NextPay plugin;
 
 	public SQLiteDatabase(NextPay plugin) {
 		this.plugin = plugin;

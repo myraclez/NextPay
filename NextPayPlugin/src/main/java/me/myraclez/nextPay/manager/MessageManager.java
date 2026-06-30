@@ -15,7 +15,6 @@ public class MessageManager {
 
 	private final NextPay plugin;
 
-	File messageFile;
 	@Getter
 	private FileConfiguration messageConfig;
 
@@ -26,7 +25,7 @@ public class MessageManager {
 	}
 
 	public void reload() {
-		this.messageFile = new File(plugin.getDataFolder(), "messages.yml");
+		File messageFile = new File(plugin.getDataFolder(), "messages.yml");
 		if (!messageFile.exists()) {
 			plugin.saveResource("messages.yml", false);
 		}

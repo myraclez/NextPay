@@ -28,7 +28,7 @@ public class BaltopGUI implements InventoryHolder {
 
 	private List<Map.Entry<UUID, Double>> balances;
 	private final int SLOTS_PER_PAGE = 45;
-	ConfigurationSection config;
+	private final ConfigurationSection config;
 	private final NextPay plugin;
 	private final Inventory inventory;
 
