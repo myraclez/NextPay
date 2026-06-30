@@ -33,12 +33,10 @@ public class PayCommand implements CommandExecutor, TabCompleter {
 	@Override
 	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String s, @NotNull String @NotNull [] args) {
 
-		if (!(sender instanceof Player)) {
+		if (!(sender instanceof Player player)) {
 			plugin.getLogger().log(Level.FINE, "Only players can use this");
 			return true;
 		}
-
-		Player player = (Player) sender;
 
 		if (args.length < 2) {
 			player.sendMessage(ColorUtil.colorize("<red>Use /pay <player> <amount>"));

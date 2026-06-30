@@ -5,7 +5,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import lombok.Getter;
 import me.myraclez.nextPay.NextPay;
 import me.myraclez.nextPay.database.Database;
-import me.myraclez.nextPay.model.PlayerSettings;
+import me.myraclez.nextPayAPI.PlayerSettings;
 import org.bukkit.scheduler.BukkitRunnable;
 
 import java.io.File;

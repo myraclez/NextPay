@@ -1,6 +1,7 @@
 package me.myraclez.nextPay;
 
 import lombok.Getter;
+import me.myraclez.nextPay.api.NextPayAPIImpl;
 import me.myraclez.nextPay.command.*;
 import me.myraclez.nextPay.database.Database;
 import me.myraclez.nextPay.database.impl.MySQLDatabase;
@@ -10,12 +11,15 @@ import me.myraclez.nextPay.listener.InventoryListener;
 import me.myraclez.nextPay.listener.JoinListener;
 import me.myraclez.nextPay.manager.GuiConfigManager;
 import me.myraclez.nextPay.manager.MessageManager;
+import me.myraclez.nextPayAPI.NextPayAPI;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public final class NextPay extends JavaPlugin {
+
+	private static NextPayAPI api;
 
 	@Getter
 	GuiConfigManager guiConfigManager;
@@ -26,19 +30,30 @@ public final class NextPay extends JavaPlugin {
 	@Getter
 	Database database;
 
+	/**
+	 * @return the singleton NextPay public API instance.
+	 * Other plugins can call {@code NextPay.getAPI()} once NextPay has enabled.
+	 */
+	public static NextPayAPI getAPI() {
+		return api;
+	}
+
 	@Override
 	public void onEnable() {
-
-		// Register EconomyProvider using Vault
-		economy = new NextEconomy(this);
-		Bukkit.getServicesManager().register(Economy.class, economy,this, ServicePriority.Normal);
 
 		saveDefaultConfig();
 
 		initializeDatabase();
 		initializeManagers();
+
+		// Register EconomyProvider using Vault
+		economy = new NextEconomy(this);
+		Bukkit.getServicesManager().register(Economy.class, economy,this, ServicePriority.Normal);
+
 		registerCommands();
 		registerListeners();
+
+		api = new NextPayAPIImpl(this);
 	}
 
 	@Override

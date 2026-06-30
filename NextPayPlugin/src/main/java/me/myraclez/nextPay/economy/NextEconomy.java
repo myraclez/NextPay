@@ -1,7 +1,6 @@
 package me.myraclez.nextPay.economy;
 
 import me.myraclez.nextPay.NextPay;
-import me.myraclez.nextPay.database.Database;
 import net.milkbowl.vault.economy.Economy;
 import net.milkbowl.vault.economy.EconomyResponse;
 import org.bukkit.Bukkit;
