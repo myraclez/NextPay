@@ -23,5 +23,6 @@ public interface Database {
 	boolean isNotifications(UUID player);
 	CompletableFuture<List<Map.Entry<UUID, Double>>> getAllBalances();
 	void createSettingsEntry(UUID player);
-	CompletableFuture<PlayerSettings> getSettings(UUID player);
+	PlayerSettings getSettings(UUID player);
+	CompletableFuture<PlayerSettings> getSettingsAsync(UUID player);
 }

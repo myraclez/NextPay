@@ -256,7 +256,7 @@ public class MySQLDatabase implements Database {
 	}
 
 	@Override
-	public CompletableFuture<PlayerSettings> getSettings(UUID player) {
+	public CompletableFuture<PlayerSettings> getSettingsAsync(UUID player) {
 		CompletableFuture<PlayerSettings> future = new CompletableFuture<>();
 		new BukkitRunnable(){
 
@@ -277,58 +277,60 @@ public class MySQLDatabase implements Database {
 
 					}
 				} catch (SQLException exception) {
-					future.completeExceptionally(exception);
+					future.complete(new PlayerSettings(true, true));
 				}
 			}
 		}.runTaskAsynchronously(plugin);
 		return future;
 	}
 
+	public PlayerSettings getSettings(UUID player) {
+		String sql = "SELECT payments, notifications FROM npsettings WHERE uuid = ?";
+		try (Connection conn = dataSource.getConnection();
+			 PreparedStatement stmt = conn.prepareStatement(sql)) {
+			stmt.setString(1, player.toString());
+			try (ResultSet rs = stmt.executeQuery()) {
+				if (rs.next()) {
+					return new PlayerSettings(rs.getBoolean("payments"), rs.getBoolean("notifications"));
+				}
+			}
+		} catch (SQLException e) {
+			plugin.getLogger().severe("Couldn't load settings for " + player + ": " + e.getMessage());
+		}
+		return new PlayerSettings(true, true);
+	}
+
 	@Override
 	public void toggleNotifications(UUID player) {
-
+		String sql = "UPDATE npsettings SET notifications = NOT notifications WHERE uuid = ?";
+		try (Connection conn = dataSource.getConnection();
+			 PreparedStatement stmt = conn.prepareStatement(sql)) {
+			stmt.setString(1, player.toString());
+			stmt.executeUpdate();
+		} catch (SQLException e) {
+			plugin.getLogger().severe("Failed to toggle notifications for " + player + ": " + e.getMessage());
+		}
 	}
 
 	@Override
 	public void togglePayments(UUID player) {
-
+		String sql = "UPDATE npsettings SET payments = NOT payments WHERE uuid = ?";
+		try (Connection conn = dataSource.getConnection();
+			 PreparedStatement stmt = conn.prepareStatement(sql)) {
+			stmt.setString(1, player.toString());
+			stmt.executeUpdate();
+		} catch (SQLException e) {
+			plugin.getLogger().severe("Failed to toggle payments for " + player + ": " + e.getMessage());
+		}
 	}
 
 	@Override
 	public boolean isPayments(UUID player) {
-		String sql = "SELECT payments FROM npsettings WHERE uuid = ?";
-
-		try (Connection conn = dataSource.getConnection();
-			 PreparedStatement statement = conn.prepareStatement(sql)
-		) {
-			statement.setString(1, String.valueOf(player));
-			try (ResultSet rs = statement.executeQuery()){
-				if (rs.next()) {
-					return rs.getBoolean("payments");
-				}
-			}
-		} catch (SQLException e) {
-			plugin.getLogger().severe("Couldn't get paymentSetting for " + player);
-		}
-		return true;
+		return getSettings(player).payments();
 	}
 
 	@Override
 	public boolean isNotifications(UUID player) {
-		String sql = "SELECT notifications FROM npsettings WHERE uuid = ?";
-
-		try (Connection conn = dataSource.getConnection();
-			 PreparedStatement statement = conn.prepareStatement(sql)
-		) {
-			statement.setString(1, String.valueOf(player));
-			try (ResultSet rs = statement.executeQuery()){
-				if (rs.next()) {
-					return rs.getBoolean("notifications");
-				}
-			}
-		} catch (SQLException e) {
-			plugin.getLogger().severe("Couldn't get notificationSetting for " + player);
-		}
-		return true;
+		return getSettings(player).notifications();
 	}
 }

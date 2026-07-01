@@ -74,7 +74,7 @@ public class PayCommand implements CommandExecutor, TabCompleter {
 			return true;
 		}
 
-		plugin.getDatabase().getSettings(player.getUniqueId()).thenAccept(playerSettings -> {
+		plugin.getDatabase().getSettingsAsync(player.getUniqueId()).thenAccept(playerSettings -> {
 			new BukkitRunnable() {
 				@Override
 				public void run() {

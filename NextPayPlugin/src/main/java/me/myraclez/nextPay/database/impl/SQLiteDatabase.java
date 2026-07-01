@@ -101,11 +101,17 @@ public class SQLiteDatabase implements Database {
 		}
 	}
 
+	/*
+
+		Economy
+
+	 */
+
 	@Override
 	public void createAccount(UUID uuid) {
 		if (balancesCache.containsKey(uuid)) return;
 
-		final String sql = "INSERT OR REPLACE INTO npbalances (uuid, balance) VALUES (?, 0.0)";
+		final String sql = "INSERT OR IGNORE INTO npbalances (uuid, balance) VALUES (?, 0.0)";
 		try (Connection connection = dataSource.getConnection();
 			 PreparedStatement stmt = connection.prepareStatement(sql)) {
 			stmt.setString(1, uuid.toString());
@@ -230,19 +236,24 @@ public class SQLiteDatabase implements Database {
 		return future;
 	}
 
+	/*
+
+		Settings
+
+	 */
+
 	@Override
 	public void createSettingsEntry(UUID player) {
+		settingsCache.putIfAbsent(player, new PlayerSettings(true, true));
+
 		new BukkitRunnable() {
 			@Override
 			public void run() {
 				final String sql = "INSERT OR IGNORE INTO npsettings (uuid, payments, notifications) VALUES (?, 1, 1)";
-
 				try (Connection connection = dataSource.getConnection();
 					 PreparedStatement stmt = connection.prepareStatement(sql)) {
-
 					stmt.setString(1, player.toString());
 					stmt.executeUpdate();
-
 				} catch (SQLException e) {
 					plugin.getLogger().severe("Couldn't create settings entry for " + player + ": " + e.getMessage());
 				}
@@ -250,27 +261,96 @@ public class SQLiteDatabase implements Database {
 		}.runTaskAsynchronously(plugin);
 	}
 
+
 	@Override
 	public void toggleNotifications(UUID player) {
+		PlayerSettings current = getSettings(player);
+		boolean newNotifications = !current.notifications();
+		settingsCache.put(player, new PlayerSettings(current.payments(), newNotifications));
+
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				String sql = "UPDATE npsettings SET notifications = ? WHERE uuid = ?";
+				try (Connection conn = dataSource.getConnection();
+					 PreparedStatement stmt = conn.prepareStatement(sql)) {
+					stmt.setBoolean(1, newNotifications);
+					stmt.setString(2, player.toString());
+					stmt.executeUpdate();
+				} catch (SQLException e) {
+					plugin.getLogger().severe("Failed to persist notifications toggle for " + player + ": " + e.getMessage());
+				}
+			}
+		}.runTaskAsynchronously(plugin);
 	}
 
 	@Override
 	public void togglePayments(UUID player) {
+		PlayerSettings current = getSettings(player);
+		boolean newPayments = !current.payments();
+		settingsCache.put(player, new PlayerSettings(newPayments, current.notifications()));
+
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				String sql = "UPDATE npsettings SET payments = ? WHERE uuid = ?";
+				try (Connection conn = dataSource.getConnection();
+					 PreparedStatement stmt = conn.prepareStatement(sql)) {
+					stmt.setBoolean(1, newPayments);
+					stmt.setString(2, player.toString());
+					stmt.executeUpdate();
+				} catch (SQLException e) {
+					plugin.getLogger().severe("Failed to persist payments toggle for " + player + ": " + e.getMessage());
+				}
+			}
+		}.runTaskAsynchronously(plugin);
 	}
 
 	@Override
 	public boolean isPayments(UUID player) {
-		return false;
+		return getSettings(player).payments();
 	}
 
 	@Override
 	public boolean isNotifications(UUID player) {
-		return false;
+		return getSettings(player).notifications();
+	}
+
+	public PlayerSettings getSettings(UUID player) {
+
+		PlayerSettings cached = settingsCache.get(player);
+		if (cached != null) return cached;
+
+		String sql = "SELECT payments, notifications FROM npsettings WHERE uuid = ?";
+		try (Connection conn = dataSource.getConnection();
+			 PreparedStatement stmt = conn.prepareStatement(sql)) {
+			stmt.setString(1, player.toString());
+			try (ResultSet rs = stmt.executeQuery()) {
+				if (rs.next()) {
+					PlayerSettings settings = new PlayerSettings(rs.getBoolean("payments"), rs.getBoolean("notifications"));
+					settingsCache.put(player, settings);
+					return settings;
+				}
+			}
+		} catch (SQLException e) {
+			plugin.getLogger().severe("Couldn't load settings for " + player + ": " + e.getMessage());
+		}
+		PlayerSettings settings = new PlayerSettings(true, true);
+		settingsCache.put(player, settings);
+		return settings;
 	}
 
 	@Override
-	public CompletableFuture<PlayerSettings> getSettings(UUID player) {
+	public CompletableFuture<PlayerSettings> getSettingsAsync(UUID player) {
+
 		CompletableFuture<PlayerSettings> future = new CompletableFuture<>();
+
+		PlayerSettings cached = settingsCache.get(player);
+		if (cached != null) {
+			future.complete(cached);
+			return future;
+		}
+
 		new BukkitRunnable(){
 
 			@Override
