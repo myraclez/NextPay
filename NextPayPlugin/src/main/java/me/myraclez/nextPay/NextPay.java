@@ -12,6 +12,7 @@ import me.myraclez.nextPay.listener.JoinListener;
 import me.myraclez.nextPay.manager.GuiConfigManager;
 import me.myraclez.nextPay.manager.MessageManager;
 import me.myraclez.nextPayAPI.NextPayAPI;
+import me.myraclez.nextPayAPI.NextPayProvider;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.ServicePriority;
@@ -19,7 +20,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public final class NextPay extends JavaPlugin {
 
-	private static NextPayAPI api;
+	private NextPayAPI api;
 
 	@Getter
 	private GuiConfigManager guiConfigManager;
@@ -30,12 +31,12 @@ public final class NextPay extends JavaPlugin {
 	@Getter
 	private Database database;
 
-	public static NextPayAPI getAPI() {
-		return api;
-	}
 
 	@Override
 	public void onEnable() {
+		api = new NextPayAPIImpl(this);
+
+		NextPayProvider.register(api);
 
 		saveDefaultConfig();
 
@@ -48,8 +49,6 @@ public final class NextPay extends JavaPlugin {
 
 		registerCommands();
 		registerListeners();
-
-		api = new NextPayAPIImpl(this);
 	}
 
 	@Override
@@ -57,6 +56,8 @@ public final class NextPay extends JavaPlugin {
 		if (database != null) {
 			database.disconnect();
 		}
+
+		NextPayProvider.unregister();
 	}
 
 	public void reload() {
