@@ -22,18 +22,14 @@ public final class NextPay extends JavaPlugin {
 	private static NextPayAPI api;
 
 	@Getter
-	GuiConfigManager guiConfigManager;
+	private GuiConfigManager guiConfigManager;
 	@Getter
-	MessageManager messageManager;
+	private MessageManager messageManager;
 	@Getter
-	NextEconomy economy;
+	private NextEconomy economy;
 	@Getter
-	Database database;
+	private Database database;
 
-	/**
-	 * @return the singleton NextPay public API instance.
-	 * Other plugins can call {@code NextPay.getAPI()} once NextPay has enabled.
-	 */
 	public static NextPayAPI getAPI() {
 		return api;
 	}
