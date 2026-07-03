@@ -31,7 +31,6 @@ public class MySQLDatabase implements Database {
 	public MySQLDatabase(NextPay plugin) {
 		this.plugin = plugin;
 		ConfigurationSection con = plugin.getConfig().getConfigurationSection("database");
-		assert con != null;
 		host = con.getString("host");
 		port = con.getInt("port");
 		database = con.getString("database");
@@ -73,7 +72,7 @@ public class MySQLDatabase implements Database {
 	public void createTables() {
 		String balances = """
 				CREATE TABLE IF NOT EXISTS npbalances (
-				uuid TEXT NOT NULL PRIMARY KEY,
+				uuid CHAR(36) NOT NULL PRIMARY KEY,
 				balance REAL NOT NULL DEFAULT 0.0
 				   );
 				""";
@@ -104,7 +103,7 @@ public class MySQLDatabase implements Database {
 
 		final String sql = """
     			INSERT INTO npbalances (uuid, balance)
-   				VALUES (?, ?)
+   				VALUES (?, 0.0)
     			AS new
     			ON DUPLICATE KEY UPDATE
         		balance = new.balance
@@ -190,7 +189,8 @@ public class MySQLDatabase implements Database {
 		double current = getBalance(player);
 		double newBalance = current + amount;
 
-		String sql = "INSERT OR REPLACE INTO npbalances (uuid, balance) VALUES (?, ?)";
+		String sql = "INSERT INTO npbalances (uuid, balance) VALUES (?, ?) AS new " +
+				"ON DUPLICATE KEY UPDATE balance = new.balance";
 		try (Connection conn = dataSource.getConnection();
 			 PreparedStatement stmt = conn.prepareStatement(sql)) {
 			stmt.setString(1, player.toString());

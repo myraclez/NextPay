@@ -1,171 +1,159 @@
 package me.myraclez.nextPay.command;
 
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.context.CommandContext;
+import com.mojang.brigadier.suggestion.SuggestionProvider;
+import com.mojang.brigadier.tree.LiteralCommandNode;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import me.myraclez.nextPay.NextPay;
 import me.myraclez.nextPay.util.ColorUtil;
 import me.myraclez.nextPay.util.Formatter;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+public class EconomyCommand {
 
-public class EconomyCommand implements CommandExecutor, TabCompleter {
+	private static final SuggestionProvider<CommandSourceStack> OFFLINE_PLAYER_SUGGESTIONS = (ctx, builder) -> {
+		String remaining = builder.getRemainingLowerCase();
+		for (OfflinePlayer offlinePlayer : Bukkit.getOfflinePlayers()) {
+			String name = offlinePlayer.getName();
+			if (name != null && name.toLowerCase().startsWith(remaining)) {
+				builder.suggest(name);
+			}
+		}
+		return builder.buildFuture();
+	};
 
-	private final NextPay plugin;
+	/*
 
-	public EconomyCommand(NextPay plugin) {
-		this.plugin = plugin;
+		Actual Logic
+
+	 */
+
+	public static LiteralCommandNode<CommandSourceStack> create(NextPay plugin) {
+		return Commands.literal("economy")
+				.requires(source -> source.getSender() instanceof Player)
+				.requires(source -> source.getSender().hasPermission("nextpay.admin"))
+				.then(Commands.literal("give")
+						.then(Commands.argument("player", StringArgumentType.word())
+								.suggests(OFFLINE_PLAYER_SUGGESTIONS)
+								.then(Commands.argument("amount", StringArgumentType.word())
+										.executes(ctx -> give(plugin, ctx)))))
+				.then(Commands.literal("take")
+						.then(Commands.argument("player", StringArgumentType.word())
+								.suggests(OFFLINE_PLAYER_SUGGESTIONS)
+								.then(Commands.argument("amount", StringArgumentType.word())
+										.executes(ctx -> take(plugin, ctx)))))
+				.then(Commands.literal("set")
+						.then(Commands.argument("player", StringArgumentType.word())
+								.then(Commands.argument("amount", StringArgumentType.word())
+										.executes(ctx -> set(plugin, ctx)))))
+				.then(Commands.literal("clear")
+						.then(Commands.argument("player", StringArgumentType.word())
+								.suggests(OFFLINE_PLAYER_SUGGESTIONS)
+								.executes(ctx -> clear(plugin, ctx))))
+				.build();
 	}
 
+	/*
 
-	@Override
-	public boolean onCommand(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String @NotNull [] args) {
-		if (!(commandSender instanceof Player player)) {
-			commandSender.sendMessage("Only players can execute this command");
-			return true;
-		}
+		Helper methods
 
-		if (!(player.hasPermission("nextpay.admin"))) {
-			player.sendMessage("You don't have permission to execute this command");
-			return true;
-		}
+	 */
 
-		if (args.length < 2) {
-			return false;
-		}
+	private static int give(NextPay plugin, CommandContext<CommandSourceStack> ctx) {
+		Player player = (Player) ctx.getSource().getSender();
+		if (player == null) return Command.SINGLE_SUCCESS;
 
-		String param = args[0];
-		switch (param) {
-			case "give": {
-				if (args.length < 3) {
-					return false;
-				}
+		OfflinePlayer target = requireExistingPlayer(player, StringArgumentType.getString(ctx, "player"));
+		if (target == null) return Command.SINGLE_SUCCESS;
 
-				OfflinePlayer target = Bukkit.getOfflinePlayer(args[1]);
-				if (!target.hasPlayedBefore()) {
-					player.sendMessage(ColorUtil.colorize("<red>This player does exist"));
-					return true;
-				}
-				double amount;
-				try {
-					amount = Formatter.deformat(args[2]);
-				} catch (Exception e) {
-					player.sendMessage(ColorUtil.colorize("<red>Invalid Amount"));
-					break;
-				}
-				plugin.getEconomy().depositPlayer(target,  amount);
-				plugin.getMessageManager().sendMessage(player, "messages.added", "%player%", target.getName(), "%amount%", String.valueOf(Formatter.format(amount)));
-				break;
-			}
-			case "take": {
-				if (args.length < 3) {
-					return false;
-				}
+		Double amount = requireValidAmount(player, StringArgumentType.getString(ctx, "amount"));
+		if (amount == null) return Command.SINGLE_SUCCESS;
 
-				OfflinePlayer target = Bukkit.getOfflinePlayer(args[1]);
-				if (!target.hasPlayedBefore()) {
-					player.sendMessage(ColorUtil.colorize("<red>This player does exist"));
-					return true;
-				}
-				double amount;
-				try {
-					amount = Formatter.deformat(args[2]);
-				} catch (Exception e) {
-					player.sendMessage(ColorUtil.colorize("<red>Invalid Amount"));
-					break;
-				}
-
-				if (!plugin.getEconomy().has(target, amount)) {
-					player.sendMessage(ColorUtil.colorize("<red>This player doesn't have enough money"));
-					return true;
-				}
-
-				plugin.getEconomy().withdrawPlayer(target,  amount);
-				plugin.getMessageManager().sendMessage(player, "messages.removed", "%player%", target.getName(), "%amount%", String.valueOf(Formatter.format(amount)));
-				break;
-			}
-			case "set": {
-				if (args.length < 3) {
-					return false;
-				}
-
-				OfflinePlayer target = Bukkit.getOfflinePlayer(args[1]);
-				if (!target.hasPlayedBefore()) {
-					player.sendMessage(ColorUtil.colorize("<red>This player doesn't exist"));
-					return true;
-				}
-				double amount;
-				try {
-					amount = Formatter.deformat(args[2]);
-				} catch (Exception e) {
-					player.sendMessage(ColorUtil.colorize("<red>Invalid amount."));
-					break;
-				}
-
-				double before = plugin.getEconomy().getBalance(target);
-				plugin.getEconomy().withdrawPlayer(target, before);
-				plugin.getEconomy().depositPlayer(target, amount);
-				plugin.getMessageManager().sendMessage(player, "messages.set", "%player%", target.getName(), "%amount%", String.valueOf(Formatter.format(amount)));
-				break;
-			}
-			case "clear": {
-				if (args.length < 2) {
-					return false;
-				}
-
-				OfflinePlayer target = Bukkit.getOfflinePlayer(args[1]);
-				if (!target.hasPlayedBefore()) {
-					player.sendMessage(ColorUtil.colorize("<red>This player doesn't exist"));
-					return true;
-				}
-
-				double before = plugin.getEconomy().getBalance(target);
-				plugin.getEconomy().withdrawPlayer(target, before);
-				plugin.getMessageManager().sendMessage(player, "messages.cleared", "%player%", target.getName());
-				break;
-			}
-			default: {
-				return false;
-			}
-		}
-		return true;
+		plugin.getEconomy().depositPlayer(target, amount);
+		plugin.getMessageManager().sendMessage(player, "messages.added",
+				"%player%", target.getName(), "%amount%", String.valueOf(Formatter.format(amount)));
+		return Command.SINGLE_SUCCESS;
 	}
 
-	@Override
-	public @Nullable List<String> onTabComplete(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String label, @NotNull String @NotNull [] args) {
-		List<String> completions = new ArrayList<>();
-		switch (args.length) {
-			case 1: {
-				for (String s : Arrays.asList("give", "take", "set", "clear")) {
-					if (s.startsWith(args[0])) {
-						completions.add(s);
-					}
-				}
-				break;
-			}
-			case 2: {
-				for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
-					if (player.getName().startsWith(args[1])) {
-						completions.add(player.getName());
-					}
-				}
-				break;
-			}
-			case 3: {
-				if (!("clear".equals(args[0]))) {
-					completions.add("<amount>");
-				}
-				break;
-			}
+	private static int take(NextPay plugin, CommandContext<CommandSourceStack> ctx) {
+		Player player = (Player) ctx.getSource().getSender();
+		if (player == null) return Command.SINGLE_SUCCESS;
+
+		OfflinePlayer target = requireExistingPlayer(player, StringArgumentType.getString(ctx, "player"));
+		if (target == null) return Command.SINGLE_SUCCESS;
+
+		Double amount = requireValidAmount(player, StringArgumentType.getString(ctx, "amount"));
+		if (amount == null) return Command.SINGLE_SUCCESS;
+
+		if (!plugin.getEconomy().has(target, amount)) {
+			player.sendMessage(ColorUtil.colorize("<red>This player doesn't have enough money"));
+			return Command.SINGLE_SUCCESS;
 		}
-		return completions;
+
+		plugin.getEconomy().withdrawPlayer(target, amount);
+		plugin.getMessageManager().sendMessage(player, "messages.removed",
+				"%player%", target.getName(), "%amount%", String.valueOf(Formatter.format(amount)));
+		return Command.SINGLE_SUCCESS;
 	}
+
+	private static int set(NextPay plugin, CommandContext<CommandSourceStack> ctx) {
+		Player player = (Player) ctx.getSource().getSender();
+		if (player == null) return Command.SINGLE_SUCCESS;
+
+		OfflinePlayer target = requireExistingPlayer(player, StringArgumentType.getString(ctx, "player"));
+		if (target == null) return Command.SINGLE_SUCCESS;
+
+		Double amount = requireValidAmount(player, StringArgumentType.getString(ctx, "amount"));
+		if (amount == null) return Command.SINGLE_SUCCESS;
+
+		double before = plugin.getEconomy().getBalance(target);
+		plugin.getEconomy().withdrawPlayer(target, before);
+		plugin.getEconomy().depositPlayer(target, amount);
+		plugin.getMessageManager().sendMessage(player, "messages.set",
+				"%player%", target.getName(), "%amount%", String.valueOf(Formatter.format(amount)));
+		return Command.SINGLE_SUCCESS;
+	}
+
+	private static int clear(NextPay plugin, CommandContext<CommandSourceStack> ctx) {
+		Player player = (Player) ctx.getSource().getSender();
+		if (player == null) return Command.SINGLE_SUCCESS;
+
+		OfflinePlayer target = requireExistingPlayer(player, StringArgumentType.getString(ctx, "player"));
+		if (target == null) return Command.SINGLE_SUCCESS;
+
+		double before = plugin.getEconomy().getBalance(target);
+		plugin.getEconomy().withdrawPlayer(target, before);
+		plugin.getMessageManager().sendMessage(player, "messages.cleared", "%player%", target.getName());
+		return Command.SINGLE_SUCCESS;
+	}
+
+	/*
+
+		Checks
+
+	 */
+
+	private static OfflinePlayer requireExistingPlayer(Player sender, String name) {
+		OfflinePlayer target = Bukkit.getOfflinePlayer(name);
+		if (!target.hasPlayedBefore()) {
+			sender.sendMessage(ColorUtil.colorize("<red>This player doesn't exist"));
+			return null;
+		}
+		return target;
+	}
+
+	private static Double requireValidAmount(Player sender, String raw) {
+		try {
+			return Formatter.deformat(raw);
+		} catch (Exception e) {
+			sender.sendMessage(ColorUtil.colorize("<red>Invalid Amount"));
+			return null;
+		}
+	}
+
 }

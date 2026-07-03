@@ -12,7 +12,7 @@ banner:
   - ""
 
 messages:
-  balance-own: '<gray>You have <green>%%amount%'
+  balance-own: '<gray>You have <green>$%amount%'
   balance-other: '<#2baafb>%player%<gray> has <green>$%amount%'
   paid: '<gray>You paid <#2baafb>%player% <green>$%amount%'
   got-paid: '<#2baafb>%player%<gray> paid you <green>$%amount%'

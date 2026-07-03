@@ -17,14 +17,14 @@ public class InventoryListener implements Listener {
 
 	@EventHandler
 	public void onClick(InventoryClickEvent event) {
-		if (event.getInventory().getHolder() instanceof BaltopGUI gui) {
+		if (event.getView().getTopInventory().getHolder() instanceof BaltopGUI gui) {
 			gui.handleClick(event);
 		}
 	}
 
 	@EventHandler
 	public void onDrag(InventoryDragEvent event) {
-		if (event.getInventory().getHolder() instanceof BaltopGUI gui) {
+		if (event.getView().getTopInventory().getHolder() instanceof BaltopGUI gui) {
 			gui.handleDrag(event);
 		}
 	}

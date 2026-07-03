@@ -1,5 +1,6 @@
 package me.myraclez.nextPay;
 
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import lombok.Getter;
 import me.myraclez.nextPay.api.NextPayAPIImpl;
 import me.myraclez.nextPay.command.*;
@@ -17,6 +18,8 @@ import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
+
+import java.util.List;
 
 public final class NextPay extends JavaPlugin {
 
@@ -70,11 +73,26 @@ public final class NextPay extends JavaPlugin {
 	 */
 
 	public void registerCommands() {
-		getCommand("balance").setExecutor(new BalanceCommand(this));
-		getCommand("pay").setExecutor(new PayCommand(this));
-		getCommand("balancetop").setExecutor(new BaltopCommand(this));
-		getCommand("economy").setExecutor(new EconomyCommand(this));
-		getCommand("nextpay").setExecutor(new NextPayCommand(this));
+
+		this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
+			commands.registrar().register(PayCommand.create(this), "Payments between to players");
+		});
+
+		this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
+			commands.registrar().register(BalanceCommand.create(this), "Check balance of players", List.of("balance"));
+		});
+
+		this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
+			commands.registrar().register(BaltopCommand.create(this), "Open top-balances menu", List.of("balancetop"));
+		});
+
+		this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
+			commands.registrar().register(EconomyCommand.create(this), "Admin economy commands", List.of("eco"));
+		});
+
+		this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
+			commands.registrar().register(NextPayCommand.create(this), "NextPay main command");
+		});
 	}
 
 	public void registerListeners() {

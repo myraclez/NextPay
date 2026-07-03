@@ -213,57 +213,57 @@ public class NextEconomy implements Economy {
 
 	@Override
 	public EconomyResponse createBank(String name, String player) {
-		return null;
+		return new EconomyResponse(0, 0, EconomyResponse.ResponseType.FAILURE, "Bank is not supported");
 	}
 
 	@Override
 	public EconomyResponse createBank(String name, OfflinePlayer player) {
-		return null;
+		return new EconomyResponse(0, 0, EconomyResponse.ResponseType.FAILURE, "Bank is not supported");
 	}
 
 	@Override
 	public EconomyResponse deleteBank(String name) {
-		return null;
+		return new EconomyResponse(0, 0, EconomyResponse.ResponseType.FAILURE, "Bank is not supported");
 	}
 
 	@Override
 	public EconomyResponse bankBalance(String name) {
-		return null;
+		return new EconomyResponse(0, 0, EconomyResponse.ResponseType.FAILURE, "Bank is not supported");
 	}
 
 	@Override
 	public EconomyResponse bankHas(String name, double amount) {
-		return null;
+		return new EconomyResponse(0, 0, EconomyResponse.ResponseType.FAILURE, "Bank is not supported");
 	}
 
 	@Override
 	public EconomyResponse bankWithdraw(String name, double amount) {
-		return null;
+		return new EconomyResponse(0, 0, EconomyResponse.ResponseType.FAILURE, "Bank is not supported");
 	}
 
 	@Override
 	public EconomyResponse bankDeposit(String name, double amount) {
-		return null;
+		return new EconomyResponse(0, 0, EconomyResponse.ResponseType.FAILURE, "Bank is not supported");
 	}
 
 	@Override
 	public EconomyResponse isBankOwner(String name, String playerName) {
-		return null;
+		return new EconomyResponse(0, 0, EconomyResponse.ResponseType.FAILURE, "Bank is not supported");
 	}
 
 	@Override
 	public EconomyResponse isBankOwner(String name, OfflinePlayer player) {
-		return null;
+		return new EconomyResponse(0, 0, EconomyResponse.ResponseType.FAILURE, "Bank is not supported");
 	}
 
 	@Override
 	public EconomyResponse isBankMember(String name, String playerName) {
-		return null;
+		return new EconomyResponse(0, 0, EconomyResponse.ResponseType.FAILURE, "Bank is not supported");
 	}
 
 	@Override
 	public EconomyResponse isBankMember(String name, OfflinePlayer player) {
-		return null;
+		return new EconomyResponse(0, 0, EconomyResponse.ResponseType.FAILURE, "Bank is not supported");
 	}
 
 	@Override

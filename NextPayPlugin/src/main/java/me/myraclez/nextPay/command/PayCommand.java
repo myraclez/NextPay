@@ -1,5 +1,10 @@
 package me.myraclez.nextPay.command;
 
+import com.mojang.brigadier.Command;
+import com.mojang.brigadier.arguments.StringArgumentType;
+import com.mojang.brigadier.tree.LiteralCommandNode;
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import io.papermc.paper.command.brigadier.Commands;
 import me.myraclez.nextPay.NextPay;
 import me.myraclez.nextPay.economy.NextEconomy;
 import me.myraclez.nextPay.util.ColorUtil;
@@ -8,132 +13,116 @@ import net.milkbowl.vault.economy.EconomyResponse;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Sound;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.logging.Level;
+public class PayCommand {
 
-public class PayCommand implements CommandExecutor, TabCompleter {
+	public PayCommand() {}
 
-	private final NextPay plugin;
-	private NextEconomy economy;
+	public static LiteralCommandNode<CommandSourceStack> create(NextPay plugin) {
+		return Commands.literal("pay")
+				.requires(source -> source.getSender() instanceof Player)
+				.requires(source -> source.getSender().hasPermission("nextpay.pay"))
+				.then(Commands.argument("target", StringArgumentType.word())
+						.suggests((ctx, builder) -> {
+							String input = builder.getRemaining().toLowerCase();
+							for (OfflinePlayer offline : Bukkit.getOfflinePlayers()) {
+								String name = offline.getName();
+								if (name != null && name.toLowerCase().startsWith(input)) {
+									builder.suggest(name);
+								}
+							}
+							return builder.buildFuture();
+						})
+						.then(Commands.argument("amount", StringArgumentType.word())
+								.suggests((ctx, builder) -> {
+									builder.suggest("<amount>");
+									return builder.buildFuture();
+								})
+								.executes(ctx -> {
+									Player player = (Player) ctx.getSource().getSender();
+									String targetName = StringArgumentType.getString(ctx, "target");
+									String rawAmount = StringArgumentType.getString(ctx, "amount");
 
-	public PayCommand(NextPay plugin) {
-		this.plugin = plugin;
+									OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
+
+									if (!target.hasPlayedBefore()) {
+										player.sendMessage(ColorUtil.colorize("<red>This player doesn't exist."));
+										return Command.SINGLE_SUCCESS;
+									}
+
+									if (target.getUniqueId().equals(player.getUniqueId())) {
+										player.sendMessage(ColorUtil.colorize("<red>You can't pay yourself."));
+										return Command.SINGLE_SUCCESS;
+									}
+
+									double amount;
+									try {
+										amount = me.myraclez.nextPay.util.Formatter.deformat(rawAmount);
+									} catch (IllegalArgumentException e) {
+										player.sendMessage(ColorUtil.colorize("<red>Invalid amount."));
+										return Command.SINGLE_SUCCESS;
+									}
+
+									if (amount <= 0) {
+										player.sendMessage(ColorUtil.colorize("<red>Invalid amount."));
+										return Command.SINGLE_SUCCESS;
+									}
+
+									NextEconomy economy = plugin.getEconomy();
+									if (economy == null) {
+										player.sendMessage("Economy is null!");
+										return Command.SINGLE_SUCCESS;
+									}
+
+									double finalAmount = amount;
+									plugin.getDatabase().getSettingsAsync(target.getUniqueId()).thenAccept(playerSettings -> {
+										new BukkitRunnable() {
+											@Override
+											public void run() {
+												pay(plugin, economy, player, target, finalAmount, playerSettings.payments(), playerSettings.notifications());
+											}
+										}.runTask(plugin);
+									});
+
+									return Command.SINGLE_SUCCESS;
+								})
+						)
+				)
+				.build();
 	}
 
-	@Override
-	public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String s, @NotNull String @NotNull [] args) {
-
-		if (!(sender instanceof Player player)) {
-			plugin.getLogger().log(Level.FINE, "Only players can use this");
-			return true;
-		}
-
-		if (args.length < 2) {
-			player.sendMessage(ColorUtil.colorize("<red>Use /pay <player> <amount>"));
-			return true;
-		}
-
-		OfflinePlayer target = Bukkit.getOfflinePlayer(args[0]);
-
-		if (!target.hasPlayedBefore()) {
-			player.sendMessage(ColorUtil.colorize("<red>This player doesn't exist."));
-			return true;
-		}
-
-		if (target.equals(player)) {
-			player.sendMessage(ColorUtil.colorize("<red>You can't pay yourself."));
-			return true;
-		}
-
-		double amount;
-		try {
-			amount = Formatter.deformat(args[1]);
-		} catch (IllegalArgumentException e) {
-			player.sendMessage(ColorUtil.colorize("<red>Invalid amount."));
-			return true;
-		}
-
-		if (amount <= 0) {
-			player.sendMessage(ColorUtil.colorize("<red>Invalid amount."));
-			return true;
-		}
-		economy = plugin.getEconomy();
-
-		if (economy == null) {
-			player.sendMessage("Economy is null!");
-			return true;
-		}
-
-		plugin.getDatabase().getSettingsAsync(player.getUniqueId()).thenAccept(playerSettings -> {
-			new BukkitRunnable() {
-				@Override
-				public void run() {
-					pay(player, target, amount, playerSettings.payments(), playerSettings.notifications());
-				}
-			}.runTask(plugin);
-		});
-		return true;
-	}
-
-	@Override
-	public @Nullable List<String> onTabComplete(@NotNull CommandSender commandSender, @NotNull Command command, @NotNull String s, @NotNull String @NotNull [] strings) {
-		List<String> completions = new ArrayList<>();
-		switch (strings.length) {
-			case 1: {
-				for (OfflinePlayer player : Bukkit.getOfflinePlayers()) {
-					if (player.getName().startsWith(strings[0])) {
-						completions.add(player.getName());
-					}
-
-				}
-				break;
-			}
-			case 2: {
-				completions.add("<amount>");
-				break;
-			}
-
-		}
-		return completions;
-	}
-
-	public void pay(Player player, OfflinePlayer target, double amount, boolean payments, boolean notifications) {
+	private static void pay(NextPay plugin, NextEconomy economy, Player player, OfflinePlayer target,
+							double amount, boolean payments, boolean notifications) {
 		if (!payments) {
 			plugin.getMessageManager().sendMessage(player, "error.payments-disabled");
 			return;
 		}
 
-		EconomyResponse withDraw = economy.withdrawPlayer(player, amount);
-		if (!withDraw.transactionSuccess()) {
-			player.sendMessage(ColorUtil.colorize("<red>Something went wrong, you have been refunded your money"));
-			economy.depositPlayer(player, amount);
-			plugin.getLogger().severe(withDraw.errorMessage);
+		EconomyResponse withdraw = economy.withdrawPlayer(player, amount);
+		if (!withdraw.transactionSuccess()) {
+			player.sendMessage(ColorUtil.colorize("<red>You don't have enough money."));
+			plugin.getLogger().severe(withdraw.errorMessage);
 			return;
 		}
+
 		EconomyResponse deposit = economy.depositPlayer(target, amount);
 		if (!deposit.transactionSuccess()) {
-			player.sendMessage(ColorUtil.colorize("The other player couldn't receive the money, so you have been refunded the amount"));
+			player.sendMessage(ColorUtil.colorize("<red>The other player couldn't receive the money, so you have been refunded the amount."));
 			economy.depositPlayer(player, amount);
 			plugin.getLogger().severe(deposit.errorMessage);
 			return;
 		}
 
-		plugin.getMessageManager().sendMessage(player, "messages.paid", "%player%", target.getName(), "%amount%", String.valueOf(Formatter.format(amount)));
+		plugin.getMessageManager().sendMessage(player, "messages.paid",
+				"%player%", target.getName(), "%amount%", String.valueOf(me.myraclez.nextPay.util.Formatter.format(amount)));
+
 		if (target.isOnline() && notifications) {
 			Player onlineTarget = Bukkit.getPlayer(target.getUniqueId());
 			onlineTarget.playSound(onlineTarget.getLocation(), Sound.BLOCK_NOTE_BLOCK_BELL, 3, 1);
-			plugin.getMessageManager().sendMessage(onlineTarget, "messages.got-paid", "%player%", player.getName(), "%amount%", String.valueOf(Formatter.format(amount)));
+			plugin.getMessageManager().sendMessage(onlineTarget, "messages.got-paid",
+					"%player%", player.getName(), "%amount%", String.valueOf(Formatter.format(amount)));
 		}
 	}
-
 }

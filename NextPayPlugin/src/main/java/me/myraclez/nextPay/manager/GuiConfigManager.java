@@ -26,5 +26,4 @@ public class GuiConfigManager {
 
 		configuration = YamlConfiguration.loadConfiguration(file);
 	}
-
 }

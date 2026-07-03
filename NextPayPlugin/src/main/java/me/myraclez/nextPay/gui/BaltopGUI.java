@@ -113,7 +113,7 @@ public class BaltopGUI implements InventoryHolder {
 
 	public void handleClick(InventoryClickEvent event) {
 
-		if (event.getRawSlot() < 54) {
+		if (event.getRawSlot() < 54 || event.getClick().isShiftClick()) {
 			event.setCancelled(true);
 		}
 		int slot = event.getRawSlot();
@@ -136,7 +136,6 @@ public class BaltopGUI implements InventoryHolder {
 		}
 
 		if (slot == config.getInt("items.refresh.slot") && clicked.getType() == (Material.matchMaterial(config.getString("items.refresh.material")))) {
-			plugin.getLogger().severe("Click detected");
 			refresh();
 		}
 	}

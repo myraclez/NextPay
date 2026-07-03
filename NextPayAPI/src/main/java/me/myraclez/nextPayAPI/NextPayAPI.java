@@ -1,9 +1,15 @@
 package me.myraclez.nextPayAPI;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public interface NextPayAPI {
+
+	static NextPayAPI get() {
+		return NextPayProvider.getAPI();
+	}
 
 	void togglePayments(UUID uuid);
 
@@ -24,4 +30,6 @@ public interface NextPayAPI {
 	CompletableFuture<Boolean> isNotificationsAsync(UUID uuid);
 
 	CompletableFuture<PlayerSettings> getSettingsAsync(UUID uuid);
+
+	CompletableFuture<List<Map.Entry<UUID, Double>>> getAllBalancesAsync();
 }

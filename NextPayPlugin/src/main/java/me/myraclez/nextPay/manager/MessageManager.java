@@ -52,7 +52,7 @@ public class MessageManager {
 			player.sendMessage(finalMessage);
 
 		} catch (Exception e) {
-			plugin.getLogger().severe("Couldn't send message for key " + ":" + e.getMessage());
+			plugin.getLogger().severe("Couldn't send message for key " + key + ":" + e.getMessage());
 			player.sendMessage(Component.text("This message doesn't exist, please contact administrators", NamedTextColor.RED));
 		}
 
