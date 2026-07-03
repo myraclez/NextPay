@@ -215,7 +215,7 @@ public class SQLiteDatabase implements Database {
 		new BukkitRunnable() {
 			@Override
 			public void run() {
-				String sql = "SELECT uuid, balance FROM npbalances";
+				String sql = "SELECT uuid, balance FROM npbalances ORDER BY balance DESC";
 				List<Map.Entry<UUID, Double>> result = new ArrayList<>();
 				try (Connection conn = dataSource.getConnection();
 					 PreparedStatement statement = conn.prepareStatement(sql);
