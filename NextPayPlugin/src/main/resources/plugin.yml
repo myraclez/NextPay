@@ -1,5 +1,5 @@
 name: NextPay
-description: ${description}
+description: Standalone economy plugin
 version: ${version}
 
 main: me.myraclez.nextPay.NextPay
