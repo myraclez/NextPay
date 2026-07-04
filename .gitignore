@@ -53,6 +53,13 @@ cmake-build-*/
 # File-based project format
 *.iws
 
+# Custom project ignores
+.idea/
+*.iml
+target/
+dependency-reduced-pom.xml
+build.xml
+
 # IntelliJ
 out/
 
