@@ -6,13 +6,11 @@ Access the API:
 Put depend: [ NextPay ] 
 inside your plugin.yml
 
-maven:
+
           <repository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
         </repository>
-
-as repository
 
         <dependency>
             <groupId>com.github.myraclez.Nextpay</groupId>
@@ -20,6 +18,4 @@ as repository
             <version>v1.0.2</version>
             <scope>provided</scope>
         </dependency>
-
-        as dependncy
 
