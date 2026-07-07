@@ -15,7 +15,7 @@ inside your plugin.yml
         <dependency>
             <groupId>com.github.myraclez.Nextpay</groupId>
             <artifactId>nextpay-api</artifactId>
-            <version>v1.0.2</version>
+            <version>tag</version>
             <scope>provided</scope>
         </dependency>
 
