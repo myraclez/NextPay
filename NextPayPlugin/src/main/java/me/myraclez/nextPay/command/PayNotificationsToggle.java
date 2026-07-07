@@ -21,12 +21,12 @@ public class PayNotificationsToggle {
 					plugin.getApi().isNotificationsAsync(player.getUniqueId())
 							.thenAccept(notifications -> {
 								if (notifications) {
-									plugin.getMessageManager().sendMessage(player, "notifications-off");
+									plugin.getMessageManager().sendMessage(player, "messages.notifications-off");
 								} else {
-									plugin.getMessageManager().sendMessage(player, "notifications-on");
+									plugin.getMessageManager().sendMessage(player, "messages.notifications-on");
 								}
 
-								plugin.getApi().setPayments(player.getUniqueId(), !notifications);
+								plugin.getApi().setNotifications(player.getUniqueId(), !notifications);
 							});
 					return Command.SINGLE_SUCCESS;
 				}).build();

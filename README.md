@@ -19,3 +19,7 @@ inside your plugin.yml
             <scope>provided</scope>
         </dependency>
 
+All methods are accessed through NextPayAPI interface.
+
+To get to the methods:
+    NextPayAPI.get().<method>

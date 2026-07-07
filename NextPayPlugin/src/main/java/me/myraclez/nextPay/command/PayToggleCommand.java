@@ -21,9 +21,9 @@ public class PayToggleCommand {
 					plugin.getApi().isPaymentsAsync(player.getUniqueId())
 							.thenAccept(payments -> {
 								if (payments) {
-									plugin.getMessageManager().sendMessage(player, "pay-off");
+									plugin.getMessageManager().sendMessage(player, "messages.pay-off");
 								} else {
-									plugin.getMessageManager().sendMessage(player, "pay-on");
+									plugin.getMessageManager().sendMessage(player, "messages.pay-on");
 								}
 
 								plugin.getApi().setPayments(player.getUniqueId(), !payments);
