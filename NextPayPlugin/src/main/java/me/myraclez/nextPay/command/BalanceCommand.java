@@ -55,7 +55,7 @@ public class BalanceCommand {
 		OfflinePlayer target = Bukkit.getOfflinePlayer(targetsName);
 
 		if (!target.hasPlayedBefore()) {
-			player.sendMessage(ColorUtil.colorize("<red>This player doesn't exist"));
+			plugin.getMessageManager().sendMessage(player , "invalid-player");
 			return Command.SINGLE_SUCCESS;
 		}
 

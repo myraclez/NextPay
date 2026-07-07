@@ -1,4 +1,4 @@
-# Messages file
+# Messages file for NextPay
 banner:
   - ""
   - "  <#2baafb><b>NextPay</b> <gray>v%version%"
@@ -23,3 +23,9 @@ messages:
 
 error:
   payments-disabled: '<red>This player has payments disabled.'
+  pay-yourself: '<red>You can''t pay yourself.'
+  invalid-amount: '<red>Invalid amount.'
+  invalid-player: '<red>This player doesn''t exist'
+  not-enough-money: '<red>You don''t have enough money'
+  player-not-received: '<red>The other player couldn''t receive the money, so you have been refunded the amount.'
+  other-not-enough-money: '"<red>This player doesn''t have enough money"'

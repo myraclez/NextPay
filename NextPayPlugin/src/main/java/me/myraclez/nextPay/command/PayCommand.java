@@ -48,12 +48,12 @@ public class PayCommand {
 									OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
 
 									if (!target.hasPlayedBefore()) {
-										player.sendMessage(ColorUtil.colorize("<red>This player doesn't exist."));
+										plugin.getMessageManager().sendMessage(player, "invalid-player");
 										return Command.SINGLE_SUCCESS;
 									}
 
 									if (target.getUniqueId().equals(player.getUniqueId())) {
-										player.sendMessage(ColorUtil.colorize("<red>You can't pay yourself."));
+										plugin.getMessageManager().sendMessage(player, "pay-yourself");
 										return Command.SINGLE_SUCCESS;
 									}
 
@@ -61,18 +61,18 @@ public class PayCommand {
 									try {
 										amount = me.myraclez.nextPay.util.Formatter.deformat(rawAmount);
 									} catch (IllegalArgumentException e) {
-										player.sendMessage(ColorUtil.colorize("<red>Invalid amount."));
+										plugin.getMessageManager().sendMessage(player, "invalid-amount");
 										return Command.SINGLE_SUCCESS;
 									}
 
 									if (amount <= 0) {
-										player.sendMessage(ColorUtil.colorize("<red>Invalid amount."));
+										plugin.getMessageManager().sendMessage(player, "invalid-amount");
 										return Command.SINGLE_SUCCESS;
 									}
 
 									NextEconomy economy = plugin.getEconomy();
 									if (economy == null) {
-										player.sendMessage("Economy is null!");
+										player.sendMessage("Economy is null, something has gone seriously wrong, please contact administrators! " + System.currentTimeMillis());
 										return Command.SINGLE_SUCCESS;
 									}
 
@@ -102,14 +102,14 @@ public class PayCommand {
 
 		EconomyResponse withdraw = economy.withdrawPlayer(player, amount);
 		if (!withdraw.transactionSuccess()) {
-			player.sendMessage(ColorUtil.colorize("<red>You don't have enough money."));
+			plugin.getMessageManager().sendMessage(player, "not-enough-money");
 			plugin.getLogger().severe(withdraw.errorMessage);
 			return;
 		}
 
 		EconomyResponse deposit = economy.depositPlayer(target, amount);
 		if (!deposit.transactionSuccess()) {
-			player.sendMessage(ColorUtil.colorize("<red>The other player couldn't receive the money, so you have been refunded the amount."));
+			plugin.getMessageManager().sendMessage(player, "player-not-received");
 			economy.depositPlayer(player, amount);
 			plugin.getLogger().severe(deposit.errorMessage);
 			return;

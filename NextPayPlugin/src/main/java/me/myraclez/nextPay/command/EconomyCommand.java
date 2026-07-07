@@ -91,7 +91,7 @@ public class EconomyCommand {
 		if (amount == null) return Command.SINGLE_SUCCESS;
 
 		if (!plugin.getEconomy().has(target, amount)) {
-			player.sendMessage(ColorUtil.colorize("<red>This player doesn't have enough money"));
+			plugin.getMessageManager().sendMessage(player, "other-not-enough-money");
 			return Command.SINGLE_SUCCESS;
 		}
 
