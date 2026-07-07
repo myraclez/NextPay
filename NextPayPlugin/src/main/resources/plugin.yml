@@ -27,7 +27,7 @@ permissions:
     default: true
   nextpay.bal:
     default: true
-  nextpay.history:
-    default: true
   nextpay.admin:
+    default: true
+  nextpay.toggle:
     default: true

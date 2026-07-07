@@ -7,7 +7,6 @@ import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import me.myraclez.nextPay.NextPay;
 import me.myraclez.nextPay.economy.NextEconomy;
-import me.myraclez.nextPay.util.ColorUtil;
 import me.myraclez.nextPay.util.Formatter;
 import net.milkbowl.vault.economy.EconomyResponse;
 import org.bukkit.Bukkit;

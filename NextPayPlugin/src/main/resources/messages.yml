@@ -20,6 +20,10 @@ messages:
   set: '<gray>You have set <#2baafb>%player%<gray>''s balance to <green>$%amount%'
   removed: '<gray>You have removed <green>$%amount%<gray> from <#2baafb>%player%<gray>''s balance'
   added: '<gray>You have added <green>%amount% <gray>to <#2baafb>%player%<gray>''s balance'
+  pay-off: '<red>You will no longer receive payments.'
+  pay-on: '<green>You will now receive payments'
+  notifications-off: '<red>You will no longer be notified when receiving payments'
+  notifications-on: '<green>You will now be notified when receiving payments'
 
 error:
   payments-disabled: '<red>This player has payments disabled.'

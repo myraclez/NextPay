@@ -23,6 +23,7 @@ import java.util.List;
 
 public final class NextPay extends JavaPlugin {
 
+	@Getter
 	private NextPayAPI api;
 
 	@Getter
@@ -73,25 +74,14 @@ public final class NextPay extends JavaPlugin {
 	 */
 
 	public void registerCommands() {
-
-		this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
-			commands.registrar().register(PayCommand.create(this), "Payments between to players");
-		});
-
-		this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
-			commands.registrar().register(BalanceCommand.create(this), "Check balance of players", List.of("balance"));
-		});
-
 		this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
 			commands.registrar().register(BaltopCommand.create(this), "Open top-balances menu", List.of("balancetop"));
-		});
-
-		this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
-			commands.registrar().register(EconomyCommand.create(this), "Admin economy commands", List.of("eco"));
-		});
-
-		this.getLifecycleManager().registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
+			commands.registrar().register(PayToggleCommand.create(this), "Toggle Payments");
+			commands.registrar().register(PayNotificationsToggle.create(this), "Toggle paynotifications");
 			commands.registrar().register(NextPayCommand.create(this), "NextPay main command");
+			commands.registrar().register(EconomyCommand.create(this), "Admin economy commands", List.of("eco"));
+			commands.registrar().register(BalanceCommand.create(this), "Check balance of players", List.of("balance"));
+			commands.registrar().register(PayCommand.create(this), "Payments between to players");
 		});
 	}
 
