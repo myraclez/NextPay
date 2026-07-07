@@ -7,7 +7,7 @@ Put depend: [ NextPay ]
 inside your plugin.yml
 
 
-          <repository>
+        <repository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
         </repository>
