@@ -28,6 +28,6 @@ permissions:
   nextpay.bal:
     default: true
   nextpay.admin:
-    default: true
+    default: op
   nextpay.toggle:
     default: true

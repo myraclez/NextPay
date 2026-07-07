@@ -47,12 +47,12 @@ public class PayCommand {
 									OfflinePlayer target = Bukkit.getOfflinePlayer(targetName);
 
 									if (!target.hasPlayedBefore()) {
-										plugin.getMessageManager().sendMessage(player, "invalid-player");
+										plugin.getMessageManager().sendMessage(player, "error.invalid-player");
 										return Command.SINGLE_SUCCESS;
 									}
 
 									if (target.getUniqueId().equals(player.getUniqueId())) {
-										plugin.getMessageManager().sendMessage(player, "pay-yourself");
+										plugin.getMessageManager().sendMessage(player, "error.pay-yourself");
 										return Command.SINGLE_SUCCESS;
 									}
 
@@ -60,12 +60,12 @@ public class PayCommand {
 									try {
 										amount = me.myraclez.nextPay.util.Formatter.deformat(rawAmount);
 									} catch (IllegalArgumentException e) {
-										plugin.getMessageManager().sendMessage(player, "invalid-amount");
+										plugin.getMessageManager().sendMessage(player, "error.invalid-amount");
 										return Command.SINGLE_SUCCESS;
 									}
 
 									if (amount <= 0) {
-										plugin.getMessageManager().sendMessage(player, "invalid-amount");
+										plugin.getMessageManager().sendMessage(player, "error.invalid-amount");
 										return Command.SINGLE_SUCCESS;
 									}
 
@@ -101,14 +101,14 @@ public class PayCommand {
 
 		EconomyResponse withdraw = economy.withdrawPlayer(player, amount);
 		if (!withdraw.transactionSuccess()) {
-			plugin.getMessageManager().sendMessage(player, "not-enough-money");
+			plugin.getMessageManager().sendMessage(player, "error.not-enough-money");
 			plugin.getLogger().severe(withdraw.errorMessage);
 			return;
 		}
 
 		EconomyResponse deposit = economy.depositPlayer(target, amount);
 		if (!deposit.transactionSuccess()) {
-			plugin.getMessageManager().sendMessage(player, "player-not-received");
+			plugin.getMessageManager().sendMessage(player, "error.player-not-received");
 			economy.depositPlayer(player, amount);
 			plugin.getLogger().severe(deposit.errorMessage);
 			return;

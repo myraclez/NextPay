@@ -55,7 +55,7 @@ public class BalanceCommand {
 		OfflinePlayer target = Bukkit.getOfflinePlayer(targetsName);
 
 		if (!target.hasPlayedBefore()) {
-			plugin.getMessageManager().sendMessage(player , "invalid-player");
+			plugin.getMessageManager().sendMessage(player , "error.invalid-player");
 			return Command.SINGLE_SUCCESS;
 		}
 
