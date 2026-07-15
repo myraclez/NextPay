@@ -39,7 +39,7 @@ public class MessageManager {
 				plugin.getLogger().warning("Messages.yml doesn't exist, attempting to create it");
 				reload();
 			}
-			String message = messageConfig.getString(key, "Uh oh! Message not found: "+ key);
+			String message = messageConfig.getString(key, "Uh oh! Message not found: " + key);
 			if (message.startsWith("Uh oh! Message not found:")) {
 				plugin.getLogger().warning("Couldn't find message key " + key + "this is most likely a configuration issue");
 			}
