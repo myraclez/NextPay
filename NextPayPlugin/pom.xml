@@ -105,8 +105,8 @@
         </dependency>
         <dependency>
             <groupId>me.myraclez</groupId>
-            <artifactId>NextPay</artifactId>
-            <version>1.0.5</version>
+            <artifactId>nextpay-api</artifactId>
+            <version>1.0.6</version>
         </dependency>
     </dependencies>
 </project>
