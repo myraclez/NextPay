@@ -26,7 +26,7 @@ public class PayToggleCommand {
 									plugin.getMessageManager().sendMessage(player, "messages.pay-on");
 								}
 
-								plugin.getApi().setPayments(player.getUniqueId(), !payments);
+								plugin.getEconomyManager().togglePayments(player.getUniqueId());
 							});
 					return Command.SINGLE_SUCCESS;
 				}).build();

@@ -48,51 +48,46 @@ public class BaltopGUI implements InventoryHolder {
 
 		inventory.clear();
 
-		plugin.getDatabase().getAllBalances().thenAccept(balances -> {
-			Bukkit.getScheduler().runTask(plugin, () -> {
+		balances = plugin.getEconomyManager().getAllBalances();
 
-				this.balances = balances;
+		if (balances == null || balances.isEmpty()) {
+			plugin.getLogger().severe("Balances is null or empty");
+			return;
+		}
 
-				if (balances == null || balances.isEmpty()) {
-					plugin.getLogger().severe("Balances is null or empty");
-					return;
-				}
+		ConfigurationSection next = config.getConfigurationSection("items.next");
+		if (next != null && (balances.size() > page * SLOTS_PER_PAGE)) {
+			inventory.setItem(next.getInt("slot"), itemFromSection(next));
+		}
 
-				ConfigurationSection next = config.getConfigurationSection("items.next");
-				if (next != null && (balances.size() > page * SLOTS_PER_PAGE)) {
-					inventory.setItem(next.getInt("slot"), itemFromSection(next));
-				}
+		ConfigurationSection previous = config.getConfigurationSection("items.previous");
+		if (previous != null && !(page <= 1)) {
+			inventory.setItem(previous.getInt("slot"), itemFromSection(previous));
+		}
 
-				ConfigurationSection previous = config.getConfigurationSection("items.previous");
-				if (previous != null && !(page <= 1)) {
-					inventory.setItem(previous.getInt("slot"), itemFromSection(previous));
-				}
+		ConfigurationSection refresh = config.getConfigurationSection("items.refresh");
+		if (refresh != null) {
+			inventory.setItem(refresh.getInt("slot"), itemFromSection(refresh));
+		}
 
-				ConfigurationSection refresh = config.getConfigurationSection("items.refresh");
-				if (refresh != null) {
-					inventory.setItem(refresh.getInt("slot"), itemFromSection(refresh));
-				}
-
-				final int lower = (page - 1) * SLOTS_PER_PAGE;
-				final int upper = Math.min(balances.size(), lower + SLOTS_PER_PAGE);
-				for (int i = lower; i < upper; i++) {
-					Map.Entry<UUID, Double> entry = balances.get(i);
-					final UUID player = entry.getKey();
-					final double balance = entry.getValue();
-					ItemStack head = new ItemStack(Material.PLAYER_HEAD);
-					SkullMeta headMeta = (SkullMeta) head.getItemMeta();
-					headMeta.setOwningPlayer(Bukkit.getOfflinePlayer(player));
-					List<Component> lore = new ArrayList<>();
-					headMeta.displayName(ColorUtil.colorize(config.getString("format.name").replace("%player%", Bukkit.getOfflinePlayer(player).getName())));
-					for (String s : config.getStringList("format.lore")) {
-						lore.add(ColorUtil.colorize(s.replace("%balance%", String.valueOf(Formatter.format(balance))).replace("%position%", String.valueOf(i + 1))));
-					}
-					headMeta.lore(lore);
-					head.setItemMeta(headMeta);
-					inventory.setItem(i - lower, head);
-				}
-			});
-		});
+		final int lower = (page - 1) * SLOTS_PER_PAGE;
+		final int upper = Math.min(balances.size(), lower + SLOTS_PER_PAGE);
+		for (int i = lower; i < upper; i++) {
+			Map.Entry<UUID, Double> entry = balances.get(i);
+			final UUID player = entry.getKey();
+			final double balance = entry.getValue();
+			ItemStack head = new ItemStack(Material.PLAYER_HEAD);
+			SkullMeta headMeta = (SkullMeta) head.getItemMeta();
+			headMeta.setOwningPlayer(Bukkit.getOfflinePlayer(player));
+			List<Component> lore = new ArrayList<>();
+			headMeta.displayName(ColorUtil.colorize(config.getString("format.name").replace("%player%", Bukkit.getOfflinePlayer(player).getName())));
+			for (String s : config.getStringList("format.lore")) {
+				lore.add(ColorUtil.colorize(s.replace("%balance%", String.valueOf(Formatter.format(balance))).replace("%position%", String.valueOf(i + 1))));
+			}
+			headMeta.lore(lore);
+			head.setItemMeta(headMeta);
+			inventory.setItem(i - lower, head);
+		}
 	}
 
 	public ItemStack itemFromSection(ConfigurationSection section) {

@@ -1,4 +1,6 @@
 package me.myraclez.nextPayAPI;
 
-public record PlayerSettings(boolean payments, boolean notifications) {
+import java.util.UUID;
+
+public record PlayerSettings(UUID uuid, boolean payments, boolean notifications) {
 }

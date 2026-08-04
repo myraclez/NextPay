@@ -59,9 +59,12 @@ public class BalanceCommand {
 			return Command.SINGLE_SUCCESS;
 		}
 
-		plugin.getMessageManager()
-				.sendMessage(player, "messages.balance-other", "%player%", target.getName(),
-						"%amount%", Formatter.format(plugin.getEconomy().getBalance(target)));
+		plugin.getEconomyManager().getBalanceAsync(target.getUniqueId()).thenAccept(balance -> {
+			plugin.getMessageManager()
+					.sendMessage(player, "messages.balance-other", "%player%", target.getName(),
+							"%amount%", Formatter.format(balance));
+		});
+
 		return Command.SINGLE_SUCCESS;
 	}
 }

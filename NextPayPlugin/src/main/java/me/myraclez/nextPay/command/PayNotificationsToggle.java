@@ -26,7 +26,7 @@ public class PayNotificationsToggle {
 									plugin.getMessageManager().sendMessage(player, "messages.notifications-on");
 								}
 
-								plugin.getApi().setNotifications(player.getUniqueId(), !notifications);
+								plugin.getEconomyManager().toggleNotifications(player.getUniqueId());
 							});
 					return Command.SINGLE_SUCCESS;
 				}).build();

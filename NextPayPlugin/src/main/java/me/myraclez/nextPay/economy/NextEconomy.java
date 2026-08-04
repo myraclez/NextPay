@@ -33,7 +33,7 @@ public class NextEconomy implements Economy {
 
 	@Override
 	public int fractionalDigits() {
-		return 3;
+		return 2;
 	}
 
 	@Override
@@ -57,7 +57,7 @@ public class NextEconomy implements Economy {
 
 	@Override
 	public boolean hasAccount(OfflinePlayer player) {
-		return plugin.getDatabase().hasAccount(player.getUniqueId());
+		return plugin.getEconomyManager().hasAccount(player.getUniqueId());
 	}
 
 	@Override
@@ -85,7 +85,7 @@ public class NextEconomy implements Economy {
 
 	@Override
 	public double getBalance(OfflinePlayer player) {
-		return plugin.getDatabase().getBalance(player.getUniqueId());
+		return plugin.getEconomyManager().getBalance(player.getUniqueId());
 	}
 
 	@Override
@@ -99,7 +99,7 @@ public class NextEconomy implements Economy {
 
 	@Override
 	public double getBalance(OfflinePlayer player, String world) {
-		return plugin.getDatabase().getBalance(player.getUniqueId());
+		return getBalance(player);
 	}
 
 	@Override
@@ -132,12 +132,11 @@ public class NextEconomy implements Economy {
 	public EconomyResponse withdrawPlayer(OfflinePlayer player, double amount) {
 		if (!hasAccount(player)) {
 			createPlayerAccount(player);
-			return new EconomyResponse(0, 0, EconomyResponse.ResponseType.FAILURE, "Account not found");
 		}
 		if (!has(player, amount)) {
 			return new EconomyResponse(0, getBalance(player), EconomyResponse.ResponseType.FAILURE, "Insufficient funds");
 		}
-		boolean success = plugin.getDatabase().withdraw(player.getUniqueId(), amount);
+		boolean success = plugin.getEconomyManager().withdraw(player.getUniqueId(), amount);
 		if (success) {
 			return new EconomyResponse(amount, getBalance(player), EconomyResponse.ResponseType.SUCCESS, "");
 		}
@@ -164,9 +163,8 @@ public class NextEconomy implements Economy {
 	public EconomyResponse depositPlayer(OfflinePlayer player, double amount) {
 		if (!hasAccount(player)) {
 			createPlayerAccount(player);
-			return new EconomyResponse(0, 0, EconomyResponse.ResponseType.FAILURE, "Account not found");
 		}
-		boolean success = plugin.getDatabase().deposit(player.getUniqueId(), amount);
+		boolean success = plugin.getEconomyManager().deposit(player.getUniqueId(), amount);
 		if (success) {
 			return new EconomyResponse(amount, getBalance(player), EconomyResponse.ResponseType.SUCCESS, "");
 		}
@@ -192,7 +190,7 @@ public class NextEconomy implements Economy {
 	@Override
 	public boolean createPlayerAccount(OfflinePlayer player) {
 		if (hasAccount(player)) return false;
-		plugin.getDatabase().createAccount(player.getUniqueId());
+		plugin.getEconomyManager().createAccount(player.getUniqueId());
 		return true;
 	}
 

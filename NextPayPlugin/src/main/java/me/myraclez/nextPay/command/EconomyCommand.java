@@ -13,6 +13,7 @@ import me.myraclez.nextPay.util.Formatter;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
+import org.bukkit.event.command.UnknownCommandEvent;
 
 public class EconomyCommand {
 
@@ -74,7 +75,7 @@ public class EconomyCommand {
 		Double amount = requireValidAmount(player, StringArgumentType.getString(ctx, "amount"));
 		if (amount == null) return Command.SINGLE_SUCCESS;
 
-		plugin.getEconomy().depositPlayer(target, amount);
+		plugin.getEconomyManager().deposit(player.getUniqueId(), amount);
 		plugin.getMessageManager().sendMessage(player, "messages.added",
 				"%player%", target.getName(), "%amount%", String.valueOf(Formatter.format(amount)));
 		return Command.SINGLE_SUCCESS;
@@ -90,12 +91,12 @@ public class EconomyCommand {
 		Double amount = requireValidAmount(player, StringArgumentType.getString(ctx, "amount"));
 		if (amount == null) return Command.SINGLE_SUCCESS;
 
-		if (!plugin.getEconomy().has(target, amount)) {
+		if (!plugin.getEconomyManager().has(target.getUniqueId(), amount)) {
 			plugin.getMessageManager().sendMessage(player, "other-not-enough-money");
 			return Command.SINGLE_SUCCESS;
 		}
 
-		plugin.getEconomy().withdrawPlayer(target, amount);
+		plugin.getEconomyManager().withdraw(target.getUniqueId(), amount);
 		plugin.getMessageManager().sendMessage(player, "messages.removed",
 				"%player%", target.getName(), "%amount%", String.valueOf(Formatter.format(amount)));
 		return Command.SINGLE_SUCCESS;
@@ -111,9 +112,9 @@ public class EconomyCommand {
 		Double amount = requireValidAmount(player, StringArgumentType.getString(ctx, "amount"));
 		if (amount == null) return Command.SINGLE_SUCCESS;
 
-		double before = plugin.getEconomy().getBalance(target);
-		plugin.getEconomy().withdrawPlayer(target, before);
-		plugin.getEconomy().depositPlayer(target, amount);
+		double before = plugin.getEconomyManager().getBalance(target.getUniqueId());
+		plugin.getEconomyManager().withdraw(target.getUniqueId(), before);
+		plugin.getEconomyManager().deposit(target.getUniqueId(), amount);
 		plugin.getMessageManager().sendMessage(player, "messages.set",
 				"%player%", target.getName(), "%amount%", String.valueOf(Formatter.format(amount)));
 		return Command.SINGLE_SUCCESS;
@@ -126,8 +127,8 @@ public class EconomyCommand {
 		OfflinePlayer target = requireExistingPlayer(player, StringArgumentType.getString(ctx, "player"));
 		if (target == null) return Command.SINGLE_SUCCESS;
 
-		double before = plugin.getEconomy().getBalance(target);
-		plugin.getEconomy().withdrawPlayer(target, before);
+		double before = plugin.getEconomyManager().getBalance(target.getUniqueId());
+		plugin.getEconomyManager().withdraw(target.getUniqueId(), before);
 		plugin.getMessageManager().sendMessage(player, "messages.cleared", "%player%", target.getName());
 		return Command.SINGLE_SUCCESS;
 	}

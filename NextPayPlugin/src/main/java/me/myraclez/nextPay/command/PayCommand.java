@@ -15,6 +15,8 @@ import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 
+import java.util.UUID;
+
 public class PayCommand {
 
 	public PayCommand() {}
@@ -76,7 +78,7 @@ public class PayCommand {
 									}
 
 									double finalAmount = amount;
-									plugin.getDatabase().getSettingsAsync(target.getUniqueId()).thenAccept(playerSettings -> {
+									plugin.getEconomyManager().getSettingsAsync(target.getUniqueId()).thenAccept(playerSettings -> {
 										new BukkitRunnable() {
 											@Override
 											public void run() {
@@ -99,18 +101,16 @@ public class PayCommand {
 			return;
 		}
 
-		EconomyResponse withdraw = economy.withdrawPlayer(player, amount);
-		if (!withdraw.transactionSuccess()) {
+		final boolean withdrawalSuccess = plugin.getEconomyManager().withdraw(target.getUniqueId(), amount);
+		if (!withdrawalSuccess) {
 			plugin.getMessageManager().sendMessage(player, "error.not-enough-money");
-			plugin.getLogger().severe(withdraw.errorMessage);
 			return;
 		}
 
-		EconomyResponse deposit = economy.depositPlayer(target, amount);
-		if (!deposit.transactionSuccess()) {
+		final boolean depositSuccess = plugin.getEconomyManager().deposit(target.getUniqueId(), amount);
+		if (!depositSuccess) {
 			plugin.getMessageManager().sendMessage(player, "error.player-not-received");
-			economy.depositPlayer(player, amount);
-			plugin.getLogger().severe(deposit.errorMessage);
+			plugin.getEconomyManager().deposit(player.getUniqueId(), amount);
 			return;
 		}
 

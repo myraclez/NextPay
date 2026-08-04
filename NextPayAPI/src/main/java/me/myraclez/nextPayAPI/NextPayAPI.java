@@ -23,13 +23,9 @@ public interface NextPayAPI {
 
 	boolean isNotifications(UUID uuid);
 
-	PlayerSettings getSettings(UUID uuid);
-
 	CompletableFuture<Boolean> isPaymentsAsync(UUID uuid);
 
 	CompletableFuture<Boolean> isNotificationsAsync(UUID uuid);
-
-	CompletableFuture<PlayerSettings> getSettingsAsync(UUID uuid);
 
 	CompletableFuture<List<Map.Entry<UUID, Double>>> getAllBalancesAsync();
 }

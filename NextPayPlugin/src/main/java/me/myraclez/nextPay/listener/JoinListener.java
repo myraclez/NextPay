@@ -17,7 +17,7 @@ public class JoinListener implements Listener {
 	@EventHandler
 	public void onJoin(PlayerJoinEvent event) {
 		Player player = event.getPlayer();
-		plugin.getEconomy().createPlayerAccount(player);
-		plugin.getDatabase().createSettingsEntry(player.getUniqueId());
+		plugin.getEconomyManager().createAccountAsync(player.getUniqueId());
+		plugin.getEconomyManager().createSettings(player.getUniqueId());
 	}
 }

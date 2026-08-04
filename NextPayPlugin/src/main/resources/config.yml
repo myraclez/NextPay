@@ -6,11 +6,12 @@ database:
   ## available options: sqlite, mysql
   type: sqlite
   ## options for mysql
-  host: ''
+  host: 'local'
   port: 3306
-  database: ''
-  username: ''
-  password: ''
+  database: 'database'
+  username: 'root'
+  password: 'password'
   max-pool-size: 10
 
 ## General Options
+auto-save-interval: 300

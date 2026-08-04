@@ -10,10 +10,12 @@ import me.myraclez.nextPay.database.impl.SQLiteDatabase;
 import me.myraclez.nextPay.economy.NextEconomy;
 import me.myraclez.nextPay.listener.InventoryListener;
 import me.myraclez.nextPay.listener.JoinListener;
+import me.myraclez.nextPay.manager.EconomyManager;
 import me.myraclez.nextPay.manager.GuiConfigManager;
 import me.myraclez.nextPay.manager.MessageManager;
 import me.myraclez.nextPayAPI.NextPayAPI;
 import me.myraclez.nextPayAPI.NextPayProvider;
+import me.myraclez.nextPayAPI.PlayerSettings;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.ServicePriority;
@@ -34,6 +36,8 @@ public final class NextPay extends JavaPlugin {
 	private NextEconomy economy;
 	@Getter
 	private Database database;
+	@Getter
+	private EconomyManager economyManager;
 
 
 	@Override
@@ -60,6 +64,8 @@ public final class NextPay extends JavaPlugin {
 		if (database != null) {
 			database.disconnect();
 		}
+
+		economyManager.stopTask();
 
 		NextPayProvider.unregister();
 	}
@@ -107,5 +113,6 @@ public final class NextPay extends JavaPlugin {
 	public void initializeManagers() {
 		messageManager = new MessageManager(this);
 		guiConfigManager = new GuiConfigManager(this);
+		economyManager = new EconomyManager(this);
 	}
 }

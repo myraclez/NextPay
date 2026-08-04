@@ -11,18 +11,21 @@ public interface Database {
 
 	void connect();
 	void disconnect();
-	boolean hasAccount(UUID player);
 	void createAccount(UUID uuid);
-	double getBalance(UUID player);
-	boolean withdraw(UUID player, double amount);
-	boolean deposit(UUID player, double amount);
+	boolean hasAccount(UUID uuid);
+	CompletableFuture<Boolean> hasAccountAsync(UUID uuid);
+	CompletableFuture<Void> createAccountAsync(UUID uuid);
+	double getBalance(UUID uuid);
+	CompletableFuture<Double> getBalanceAsync(UUID uuid);
+	boolean withdraw(UUID uuid, double amount);
+	CompletableFuture<Boolean> withdrawAsync(UUID uuid, double amount);
+	boolean deposit(UUID uuid, double amount);
+	CompletableFuture<Boolean> depositAsync(UUID uuid, double amount);
 	void createTables();
-	void toggleNotifications(UUID player);
-	void togglePayments(UUID player);
-	boolean isPayments(UUID player);
-	boolean isNotifications(UUID player);
 	CompletableFuture<List<Map.Entry<UUID, Double>>> getAllBalances();
 	void createSettingsEntry(UUID player);
-	PlayerSettings getSettings(UUID player);
-	CompletableFuture<PlayerSettings> getSettingsAsync(UUID player);
+	CompletableFuture<List<PlayerSettings>> getAllSettings();
+	void saveBalance(UUID uuid, double balance);
+	void savePlayerSettings(PlayerSettings settings);
+	public CompletableFuture<PlayerSettings> getSettingsAsync(UUID uuid);
 }

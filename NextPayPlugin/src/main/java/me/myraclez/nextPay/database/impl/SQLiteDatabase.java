@@ -16,12 +16,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class SQLiteDatabase implements Database {
-
-	private  final Map<UUID, Double> balancesCache = new ConcurrentHashMap<>();
-	private  final Map<UUID, PlayerSettings> settingsCache = new ConcurrentHashMap<>();
 
 	@Getter
 	private HikariDataSource dataSource;
@@ -107,9 +103,52 @@ public class SQLiteDatabase implements Database {
 
 	 */
 
-	@Override
+	public CompletableFuture<Void> createAccountAsync(UUID uuid) {
+		CompletableFuture<Void> future = new CompletableFuture<>();
+
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				final String sql = "INSERT OR IGNORE INTO npbalances (uuid, balance) VALUES (?, 0.0)";
+				try (Connection connection = dataSource.getConnection();
+					 PreparedStatement stmt = connection.prepareStatement(sql)) {
+					stmt.setString(1, uuid.toString());
+					stmt.executeUpdate();
+					future.complete(null);
+				} catch (SQLException e) {
+					plugin.getLogger().severe("Failed to create account for " + uuid + ": " + e.getMessage());
+					future.completeExceptionally(e);
+				}
+			}
+		}.runTaskAsynchronously(plugin);
+
+		return future;
+	}
+
+	public CompletableFuture<Boolean> hasAccountAsync(UUID player) {
+		CompletableFuture<Boolean> future = new CompletableFuture<>();
+
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				final String sql = "SELECT 1 FROM npbalances WHERE uuid = ?";
+				try (Connection connection = dataSource.getConnection();
+					 PreparedStatement stmt = connection.prepareStatement(sql)) {
+					stmt.setString(1, player.toString());
+					try (ResultSet rs = stmt.executeQuery()) {
+						future.complete(rs.next());
+					}
+				} catch (SQLException e) {
+					plugin.getLogger().severe("Failed to check account for " + player + ": " + e.getMessage());
+					future.completeExceptionally(e);
+				}
+			}
+		}.runTaskAsynchronously(plugin);
+
+		return future;
+	}
+
 	public void createAccount(UUID uuid) {
-		if (balancesCache.containsKey(uuid)) return;
 
 		final String sql = "INSERT OR IGNORE INTO npbalances (uuid, balance) VALUES (?, 0.0)";
 		try (Connection connection = dataSource.getConnection();
@@ -120,14 +159,9 @@ public class SQLiteDatabase implements Database {
 			plugin.getLogger().severe("Failed to create account for " + uuid + ": " + e.getMessage());
 		}
 
-		balancesCache.put(uuid, 0.0);
 	}
 
-	@Override
 	public boolean hasAccount(UUID player) {
-		if (balancesCache.containsKey(player)) {
-			return true;
-		}
 
 		final String sql = "SELECT 1 FROM npbalances WHERE uuid = ?";
 
@@ -146,7 +180,6 @@ public class SQLiteDatabase implements Database {
 
 	@Override
 	public double getBalance(UUID player) {
-		if (balancesCache.containsKey(player)) return balancesCache.get(player);
 
 		String sql = "SELECT balance FROM npbalances WHERE uuid = ?";
 		double balance = 0.0;
@@ -158,13 +191,40 @@ public class SQLiteDatabase implements Database {
 			if (rs.next()) {
 				balance = rs.getDouble(1);
 			}
-			balancesCache.put(player, balance);
 		} catch (SQLException e) {
 			plugin.getLogger().severe("Couldn't get balance for UUID: " + player);
 			plugin.getLogger().severe(e.getMessage());
 		}
 
 		return balance;
+	}
+
+	@Override
+	public CompletableFuture<Double> getBalanceAsync(UUID player) {
+		CompletableFuture<Double> future = new CompletableFuture<>();
+
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				String sql = "SELECT balance FROM npbalances WHERE uuid = ?";
+				double balance = 0.0;
+
+				try (Connection connection = dataSource.getConnection();
+					 PreparedStatement statement = connection.prepareStatement(sql)) {
+					statement.setString(1, player.toString());
+					ResultSet rs = statement.executeQuery();
+					if (rs.next()) {
+						balance = rs.getDouble(1);
+					}
+					future.complete(balance);
+				} catch (SQLException e) {
+					plugin.getLogger().severe("Couldn't get balance for UUID: " + player);
+					plugin.getLogger().severe(e.getMessage());
+				}
+			}
+		}.runTaskAsynchronously(plugin);
+
+		return future;
 	}
 
 	@Override
@@ -180,13 +240,43 @@ public class SQLiteDatabase implements Database {
 			stmt.setString(1, player.toString());
 			stmt.setDouble(2, newBalance);
 			stmt.executeUpdate();
-			balancesCache.replace(player, newBalance);
 		} catch (SQLException e) {
 			plugin.getLogger().severe("Failed to withdraw: " + e.getMessage());
 			return false;
 		}
 
 		return true;
+	}
+
+	@Override
+	public CompletableFuture<Boolean> withdrawAsync(UUID uuid, double amount) {
+		return getBalanceAsync(uuid).thenCompose(current -> {
+			if (current < amount) {
+				return CompletableFuture.completedFuture(false);
+			}
+
+			double newBalance = current - amount;
+			CompletableFuture<Boolean> future = new CompletableFuture<>();
+
+			new BukkitRunnable() {
+				@Override
+				public void run() {
+					String sql = "INSERT OR REPLACE INTO npbalances (uuid, balance) VALUES (?, ?)";
+					try (Connection conn = dataSource.getConnection();
+						 PreparedStatement stmt = conn.prepareStatement(sql)) {
+						stmt.setString(1, uuid.toString());
+						stmt.setDouble(2, newBalance);
+						stmt.executeUpdate();
+						future.complete(true);
+					} catch (SQLException e) {
+						plugin.getLogger().severe("Failed to withdraw: " + e.getMessage());
+						future.complete(false);
+					}
+				}
+			}.runTaskAsynchronously(plugin);
+
+			return future;
+		});
 	}
 
 	@Override
@@ -200,13 +290,41 @@ public class SQLiteDatabase implements Database {
 			stmt.setString(1, player.toString());
 			stmt.setDouble(2, newBalance);
 			stmt.executeUpdate();
-			balancesCache.replace(player, newBalance);
 		} catch (SQLException e) {
 			plugin.getLogger().severe("Failed to deposit: " + e.getMessage());
 			return false;
 		}
 
 		return true;
+	}
+
+	@Override
+	public CompletableFuture<Boolean> depositAsync(UUID uuid, double amount) {
+		CompletableFuture<Boolean> future = new CompletableFuture<>();
+
+		getBalanceAsync(uuid).thenCompose(current -> {
+			double newBalance = current + amount;
+
+			String sql = "INSERT OR REPLACE INTO npbalances (uuid, balance) VALUES (?, ?)";
+			new BukkitRunnable() {
+				@Override
+				public void run() {
+					try (Connection conn = dataSource.getConnection();
+						 PreparedStatement stmt = conn.prepareStatement(sql)) {
+						stmt.setString(1, uuid.toString());
+						stmt.setDouble(2, newBalance);
+						stmt.executeUpdate();
+						future.complete(true);
+					} catch (SQLException e) {
+						plugin.getLogger().severe("Failed to deposit: " + e.getMessage());
+						future.complete(false);
+					}
+				}
+			}.runTaskAsynchronously(plugin);
+
+			return future;
+		});
+		return future;
 	}
 
 	@Override
@@ -244,8 +362,6 @@ public class SQLiteDatabase implements Database {
 
 	@Override
 	public void createSettingsEntry(UUID player) {
-		settingsCache.putIfAbsent(player, new PlayerSettings(true, true));
-
 		new BukkitRunnable() {
 			@Override
 			public void run() {
@@ -261,83 +377,68 @@ public class SQLiteDatabase implements Database {
 		}.runTaskAsynchronously(plugin);
 	}
 
-
 	@Override
-	public void toggleNotifications(UUID player) {
-		PlayerSettings current = getSettings(player);
-		boolean newNotifications = !current.notifications();
-		settingsCache.put(player, new PlayerSettings(current.payments(), newNotifications));
+	public CompletableFuture<List<PlayerSettings>> getAllSettings() {
+		CompletableFuture<List<PlayerSettings>> future = new CompletableFuture<>();
+
+		List<PlayerSettings> list = new ArrayList<>();
+
+		final String sql = "SELECT uuid, payments, notifications FROM npsettings;";
 
 		new BukkitRunnable() {
 			@Override
 			public void run() {
-				String sql = "UPDATE npsettings SET notifications = ? WHERE uuid = ?";
 				try (Connection conn = dataSource.getConnection();
-					 PreparedStatement stmt = conn.prepareStatement(sql)) {
-					stmt.setBoolean(1, newNotifications);
-					stmt.setString(2, player.toString());
-					stmt.executeUpdate();
+				Statement statement = conn.createStatement()) {
+					ResultSet rs = statement.executeQuery(sql);
+					while (rs.next()) {
+						list.add(new PlayerSettings(UUID.fromString(rs.getString("uuid")), rs.getBoolean("payments"), rs.getBoolean("notifications")));
+					}
+					future.complete(list);
 				} catch (SQLException e) {
-					plugin.getLogger().severe("Failed to persist notifications toggle for " + player + ": " + e.getMessage());
+					plugin.getLogger().severe("Failed to load all player settings: " + e.getMessage());
+					future.completeExceptionally(e);
+				}
+			}
+		}.runTaskAsynchronously(plugin);
+		return future;
+	}
+
+	@Override
+	public void saveBalance(UUID uuid, double balance) {
+		final String sql = "INSERT OR REPLACE INTO npbalances (uuid, balance) VALUES (?, ?);";
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				try (Connection conn = dataSource.getConnection();
+				PreparedStatement preparedStatement = conn.prepareStatement(sql)){
+					preparedStatement.setString(1, uuid.toString());
+					preparedStatement.setDouble(2, balance);
+					preparedStatement.executeUpdate();
+				} catch (SQLException e) {
+					plugin.getLogger().severe("Failed to save balance for " + uuid.toString());
 				}
 			}
 		}.runTaskAsynchronously(plugin);
 	}
 
 	@Override
-	public void togglePayments(UUID player) {
-		PlayerSettings current = getSettings(player);
-		boolean newPayments = !current.payments();
-		settingsCache.put(player, new PlayerSettings(newPayments, current.notifications()));
-
+	public void savePlayerSettings(PlayerSettings settings) {
+		final String sql = "INSERT OR REPLACE INTO npsettings (uuid, payments, notifications) VALUES (?, ? ,?);";
 		new BukkitRunnable() {
 			@Override
 			public void run() {
-				String sql = "UPDATE npsettings SET payments = ? WHERE uuid = ?";
 				try (Connection conn = dataSource.getConnection();
-					 PreparedStatement stmt = conn.prepareStatement(sql)) {
-					stmt.setBoolean(1, newPayments);
-					stmt.setString(2, player.toString());
-					stmt.executeUpdate();
+				PreparedStatement statement = conn.prepareStatement(sql)){
+					 statement.setString(1, settings.uuid().toString());
+					 statement.setBoolean(2, settings.payments());
+					 statement.setBoolean(3, settings.notifications());
+					 statement.executeUpdate();
 				} catch (SQLException e) {
-					plugin.getLogger().severe("Failed to persist payments toggle for " + player + ": " + e.getMessage());
+					throw new RuntimeException(e);
 				}
 			}
 		}.runTaskAsynchronously(plugin);
-	}
-
-	@Override
-	public boolean isPayments(UUID player) {
-		return getSettings(player).payments();
-	}
-
-	@Override
-	public boolean isNotifications(UUID player) {
-		return getSettings(player).notifications();
-	}
-
-	public PlayerSettings getSettings(UUID player) {
-
-		PlayerSettings cached = settingsCache.get(player);
-		if (cached != null) return cached;
-
-		String sql = "SELECT payments, notifications FROM npsettings WHERE uuid = ?";
-		try (Connection conn = dataSource.getConnection();
-			 PreparedStatement stmt = conn.prepareStatement(sql)) {
-			stmt.setString(1, player.toString());
-			try (ResultSet rs = stmt.executeQuery()) {
-				if (rs.next()) {
-					PlayerSettings settings = new PlayerSettings(rs.getBoolean("payments"), rs.getBoolean("notifications"));
-					settingsCache.put(player, settings);
-					return settings;
-				}
-			}
-		} catch (SQLException e) {
-			plugin.getLogger().severe("Couldn't load settings for " + player + ": " + e.getMessage());
-		}
-		PlayerSettings settings = new PlayerSettings(true, true);
-		settingsCache.put(player, settings);
-		return settings;
 	}
 
 	@Override
@@ -345,27 +446,21 @@ public class SQLiteDatabase implements Database {
 
 		CompletableFuture<PlayerSettings> future = new CompletableFuture<>();
 
-		PlayerSettings cached = settingsCache.get(player);
-		if (cached != null) {
-			future.complete(cached);
-			return future;
-		}
-
 		new BukkitRunnable(){
 
 			@Override
 			public void run() {
 				String sql = "SELECT payments, notifications FROM npsettings WHERE uuid = ?";
 				try (Connection conn = dataSource.getConnection();
-						PreparedStatement statement = conn.prepareStatement(sql)) {
+					 PreparedStatement statement = conn.prepareStatement(sql)) {
 					statement.setString(1, player.toString());
 					try (ResultSet rs = statement.executeQuery()) {
 						if (rs.next()) {
 							boolean payments = rs.getBoolean("payments");
 							boolean notifications = rs.getBoolean("notifications");
-							future.complete(new PlayerSettings(payments, notifications));
+							future.complete(new PlayerSettings(player, payments, notifications));
 						} else {
-							future.complete(new PlayerSettings(true, true));
+							future.complete(new PlayerSettings(player,true, true));
 						}
 
 					}

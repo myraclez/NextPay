@@ -19,56 +19,46 @@ public class NextPayAPIImpl implements NextPayAPI {
 
 	@Override
 	public void togglePayments(UUID uuid) {
-		plugin.getDatabase().togglePayments(uuid);
+		plugin.getEconomyManager().togglePayments(uuid);
 	}
 
 	@Override
 	public void togglePayNotifications(UUID uuid) {
-		plugin.getDatabase().toggleNotifications(uuid);
+		plugin.getEconomyManager().toggleNotifications(uuid);
 	}
 
 	@Override
 	public void setPayments(UUID uuid, boolean enabled) {
-		if (plugin.getDatabase().isPayments(uuid) != enabled) {
-			plugin.getDatabase().togglePayments(uuid);
+		if (plugin.getEconomyManager().isPayments(uuid) != enabled) {
+			plugin.getEconomyManager().togglePayments(uuid);
 		}
 	}
 
 	@Override
 	public void setNotifications(UUID uuid, boolean enabled) {
-		if (plugin.getDatabase().isNotifications(uuid) != enabled) {
-			plugin.getDatabase().toggleNotifications(uuid);
+		if (plugin.getEconomyManager().isNotifications(uuid) != enabled) {
+			plugin.getEconomyManager().toggleNotifications(uuid);
 		}
 	}
 
 	@Override
 	public boolean isPayments(UUID uuid) {
-		return plugin.getDatabase().isPayments(uuid);
+		return plugin.getEconomyManager().isPayments(uuid);
 	}
 
 	@Override
 	public boolean isNotifications(UUID uuid) {
-		return plugin.getDatabase().isNotifications(uuid);
-	}
-
-	@Override
-	public PlayerSettings getSettings(UUID uuid) {
-		return getSettingsAsync(uuid).join();
+		return plugin.getEconomyManager().isNotifications(uuid);
 	}
 
 	@Override
 	public CompletableFuture<Boolean> isPaymentsAsync(UUID uuid) {
-		return CompletableFuture.supplyAsync(() -> plugin.getDatabase().isPayments(uuid));
+		return CompletableFuture.supplyAsync(() -> plugin.getEconomyManager().isPayments(uuid));
 	}
 
 	@Override
 	public CompletableFuture<Boolean> isNotificationsAsync(UUID uuid) {
-		return CompletableFuture.supplyAsync(() -> plugin.getDatabase().isNotifications(uuid));
-	}
-
-	@Override
-	public CompletableFuture<PlayerSettings> getSettingsAsync(UUID uuid) {
-		return plugin.getDatabase().getSettingsAsync(uuid);
+		return CompletableFuture.supplyAsync(() -> plugin.getEconomyManager().isNotifications(uuid));
 	}
 
 	@Override
