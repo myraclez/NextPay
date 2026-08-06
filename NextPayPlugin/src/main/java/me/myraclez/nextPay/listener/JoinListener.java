@@ -19,5 +19,6 @@ public class JoinListener implements Listener {
 		Player player = event.getPlayer();
 		plugin.getEconomyManager().createAccountAsync(player.getUniqueId());
 		plugin.getEconomyManager().createSettings(player.getUniqueId());
+		plugin.getEconomyManager().updatePlayer(player.getUniqueId(), player.getName());
 	}
 }

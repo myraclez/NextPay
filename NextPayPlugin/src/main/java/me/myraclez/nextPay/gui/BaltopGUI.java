@@ -2,9 +2,9 @@ package me.myraclez.nextPay.gui;
 
 import lombok.Getter;
 import me.myraclez.nextPay.NextPay;
+import me.myraclez.nextPay.manager.GuiConfigManager;
 import me.myraclez.nextPay.util.ColorUtil;
 import me.myraclez.nextPay.util.Formatter;
-import me.myraclez.nextPay.util.ItemCreator;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -31,6 +31,10 @@ public class BaltopGUI implements InventoryHolder {
 	private final ConfigurationSection config;
 	private final NextPay plugin;
 	private final Inventory inventory;
+	private long lastRefresh;
+
+	private final int nextSlot, prevSlot, refreshSlot;
+	private final Material nextMaterial, prevMaterial, refreshMaterial;
 
 	@Getter
 	private int page;
@@ -41,7 +45,15 @@ public class BaltopGUI implements InventoryHolder {
 		config = plugin.getGuiConfigManager().getConfiguration().getConfigurationSection("baltop");
 		this.inventory = Bukkit.createInventory(this, 54, ColorUtil.colorize(config.getString("title").replace("%page%", String.valueOf(page))));
 
+		nextSlot = config.getInt("items.next.slot");
+		prevSlot = config.getInt("items.previous.slot");
+		refreshSlot = config.getInt("items.refresh.slot");
+		nextMaterial = Material.matchMaterial(config.getString("items.next.material", "ARROW"));
+		prevMaterial = Material.matchMaterial(config.getString("items.previous.material", "ARROW"));
+		refreshMaterial = Material.matchMaterial(config.getString("items.refresh.material", "PAPER"));
+
 		refresh();
+		lastRefresh = System.currentTimeMillis();
 	}
 
 	public void refresh() {
@@ -55,47 +67,49 @@ public class BaltopGUI implements InventoryHolder {
 			return;
 		}
 
-		ConfigurationSection next = config.getConfigurationSection("items.next");
-		if (next != null && (balances.size() > page * SLOTS_PER_PAGE)) {
-			inventory.setItem(next.getInt("slot"), itemFromSection(next));
+		GuiConfigManager gui = plugin.getGuiConfigManager();
+
+		if ((balances.size() > page * SLOTS_PER_PAGE)) {
+			inventory.setItem(gui.getNextSlot(), gui.getNextItem());
 		}
 
-		ConfigurationSection previous = config.getConfigurationSection("items.previous");
-		if (previous != null && !(page <= 1)) {
-			inventory.setItem(previous.getInt("slot"), itemFromSection(previous));
+		if (!(page <= 1)) {
+			inventory.setItem(gui.getPrevSlot(), gui.getPrevItem());
 		}
 
-		ConfigurationSection refresh = config.getConfigurationSection("items.refresh");
-		if (refresh != null) {
-			inventory.setItem(refresh.getInt("slot"), itemFromSection(refresh));
-		}
+		inventory.setItem(gui.getRefreshSlot(), gui.getRefreshItem());
+
+		final String nameFormat = gui.getNameFormat();
+		final List<String> loreFormat = gui.getLoreFormat();
 
 		final int lower = (page - 1) * SLOTS_PER_PAGE;
 		final int upper = Math.min(balances.size(), lower + SLOTS_PER_PAGE);
+
 		for (int i = lower; i < upper; i++) {
 			Map.Entry<UUID, Double> entry = balances.get(i);
-			final UUID player = entry.getKey();
-			final double balance = entry.getValue();
+			final UUID playerId = entry.getKey();
+			final String formattedBalance = String.valueOf(Formatter.format(entry.getValue()));
+			final String position = String.valueOf(i + 1);
+
 			ItemStack head = new ItemStack(Material.PLAYER_HEAD);
 			SkullMeta headMeta = (SkullMeta) head.getItemMeta();
-			headMeta.setOwningPlayer(Bukkit.getOfflinePlayer(player));
-			List<Component> lore = new ArrayList<>();
-			headMeta.displayName(ColorUtil.colorize(config.getString("format.name").replace("%player%", Bukkit.getOfflinePlayer(player).getName())));
-			for (String s : config.getStringList("format.lore")) {
-				lore.add(ColorUtil.colorize(s.replace("%balance%", String.valueOf(Formatter.format(balance))).replace("%position%", String.valueOf(i + 1))));
+			headMeta.setOwningPlayer(Bukkit.getOfflinePlayer(playerId));
+			headMeta.displayName(ColorUtil.colorize(
+					nameFormat.replace("%player%", plugin.getEconomyManager().getName(playerId))
+			));
+
+			List<Component> lore = new ArrayList<>(loreFormat.size());
+			for (String s : loreFormat) {
+				lore.add(ColorUtil.colorize(
+						s.replace("%balance%", formattedBalance).replace("%position%", position)
+				));
 			}
 			headMeta.lore(lore);
 			head.setItemMeta(headMeta);
 			inventory.setItem(i - lower, head);
 		}
-	}
 
-	public ItemStack itemFromSection(ConfigurationSection section) {
-		List<Component> lore = new ArrayList<>();
-		for (String s : section.getStringList("lore")) {
-			lore.add(ColorUtil.colorize(s));
-		}
-		return new ItemCreator(Material.matchMaterial(section.getString("material")), ColorUtil.colorize(section.getString("name")), lore).build();
+		lastRefresh = System.currentTimeMillis();
 	}
 
 	public void open(Player player) {
@@ -103,7 +117,9 @@ public class BaltopGUI implements InventoryHolder {
 	}
 
 	/*
+
 		Click & Drag handling, passed from GuiListener.java
+
 	 */
 
 	public void handleClick(InventoryClickEvent event) {
@@ -118,20 +134,22 @@ public class BaltopGUI implements InventoryHolder {
 			return;
 		}
 
-		if (slot == config.getInt("items.next.slot") && clicked.getType() == Material.matchMaterial(config.getString("items.next.material"))) {
+		if (slot == nextSlot && clicked.getType() == nextMaterial) {
 			if (balances.size() > page * SLOTS_PER_PAGE) {
-				new BaltopGUI(plugin, page + 1).open((Player) event.getWhoClicked());
+				new BaltopGUI(this.plugin, this.page + 1).open((Player) event.getWhoClicked());
 			}
 		}
 
-		if (slot == config.getInt("items.previous.slot") && clicked.getType() == Material.matchMaterial(config.getString("items.previous.material"))) {
+		if (slot == prevSlot && clicked.getType() == prevMaterial) {
 			if (page > 1) {
-				new BaltopGUI(plugin, page - 1).open((Player) event.getWhoClicked());
+				new BaltopGUI(this.plugin, this.page - 1).open((Player) event.getWhoClicked());
 			}
 		}
 
-		if (slot == config.getInt("items.refresh.slot") && clicked.getType() == (Material.matchMaterial(config.getString("items.refresh.material")))) {
-			refresh();
+		if (slot == refreshSlot && clicked.getType() == refreshMaterial) {
+			if (System.currentTimeMillis() - this.lastRefresh > plugin.getConfig().getLong("block-refresh-time", 2000L)) {
+				refresh();
+			}
 		}
 	}
 

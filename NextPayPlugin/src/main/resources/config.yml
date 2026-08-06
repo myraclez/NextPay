@@ -14,4 +14,8 @@ database:
   max-pool-size: 10
 
 ## General Options
+## Interval in seconds
 auto-save-interval: 300
+
+## Interval to block refreshing in GUIs to often (In milliseconds)
+block-refresh-time: 2000

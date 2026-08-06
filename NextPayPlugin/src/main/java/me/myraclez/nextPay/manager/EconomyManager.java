@@ -1,15 +1,19 @@
 package me.myraclez.nextPay.manager;
 
+import com.mysql.cj.x.protobuf.Mysqlx;
 import me.myraclez.nextPay.NextPay;
 import me.myraclez.nextPay.database.Database;
 import me.myraclez.nextPayAPI.PlayerSettings;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
+import java.io.PushbackInputStream;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 public class EconomyManager {
@@ -21,6 +25,10 @@ public class EconomyManager {
 
 	private final Map<UUID, Double> balancesCache = new ConcurrentHashMap<>();
 	private final Map<UUID, PlayerSettings> settingsCache = new ConcurrentHashMap<>();
+
+	private final Map<String, UUID> uuidCache = new ConcurrentHashMap<>();
+	private final Map<UUID, String> namesCache = new ConcurrentHashMap<>();
+	private final Set<UUID> unsavedNames = ConcurrentHashMap.newKeySet();
 
 	private final Set<UUID> unsavedBalances = ConcurrentHashMap.newKeySet();
 	private final Set<UUID> unsavedSettings = ConcurrentHashMap.newKeySet();
@@ -43,12 +51,19 @@ public class EconomyManager {
 
 				Iterator<UUID> iterator1 = unsavedSettings.iterator();
 				while (iterator1.hasNext()) {
-					UUID uuid = iterator.next();
+					UUID uuid = iterator1.next();
 					plugin.getDatabase().savePlayerSettings(settingsCache.get(uuid));
-					iterator.remove();
+					iterator1.remove();
+				}
+
+				Iterator<UUID> iterator2 = unsavedNames.iterator();
+				while (iterator2.hasNext()) {
+					UUID uuid = iterator2.next();
+					database.updatePlayer(uuid, namesCache.get(uuid));
+					iterator2.remove();
 				}
 			}
-		}.runTaskTimerAsynchronously(plugin, plugin.getConfig().getInt("auto-save-interval") * 20L, plugin.getConfig().getInt("auto-save-interval") * 20L);
+		}.runTaskTimerAsynchronously(plugin, 20L, plugin.getConfig().getInt("auto-save-interval") * 20L);
 	}
 
 	public void stopTask() {
@@ -76,6 +91,32 @@ public class EconomyManager {
 			Bukkit.getPluginManager().disablePlugin(plugin);
 			return null;
 		});
+
+		database.getUsernames().thenAccept(usernames -> {
+			for (Map.Entry<UUID, String> entry : usernames) {
+				namesCache.put(entry.getKey(), entry.getValue());
+				uuidCache.put(entry.getValue(), entry.getKey());
+			}
+
+			for (OfflinePlayer offlinePlayer : Bukkit.getOfflinePlayers()) {
+				UUID uuid = offlinePlayer.getUniqueId();
+				String name = offlinePlayer.getName();
+
+				if (name == null) {
+					plugin.getLogger().warning("Skipping offline player with null name, UUID: " + uuid);
+					continue;
+				}
+
+				if (!namesCache.containsKey(offlinePlayer.getUniqueId())) {
+					namesCache.put(uuid, offlinePlayer.getName());
+					uuidCache.put(offlinePlayer.getName(), uuid);
+					unsavedNames.add(uuid);
+					createAccountAsync(uuid);
+					createSettings(uuid);
+				}
+			}
+		});
+
 		startTask();
 	}
 
@@ -103,7 +144,11 @@ public class EconomyManager {
 	}
 
 	public void createAccount(UUID uuid) {
-		if (!balancesCache.containsKey(uuid)) database.createAccount(uuid);
+		if (!balancesCache.containsKey(uuid)) {
+			balancesCache.put(uuid, 0.0);
+			unsavedBalances.add(uuid);
+			database.createAccount(uuid);
+		}
 	}
 
 	public boolean hasAccount(UUID uuid) {
@@ -212,5 +257,32 @@ public class EconomyManager {
 		return balancesCache.entrySet().stream()
 				.sorted(Map.Entry.<UUID, Double>comparingByValue().reversed())
 				.collect(Collectors.toList());
+	}
+
+	public void updatePlayer(UUID uuid, String name) {
+		namesCache.put(uuid, name);
+		uuidCache.put(name, uuid);
+		unsavedNames.add(uuid);
+	}
+
+	public String getName(UUID uuid) {
+		return namesCache.get(uuid);
+	}
+
+	public boolean isPlayer(String name) {
+		if (namesCache.containsValue(name)) return true;
+
+		return false;
+	}
+
+	public List<String> getUsernames() {
+		return namesCache.values().stream().toList();
+	}
+
+	public UUID getUuid(String string) {
+		if (!namesCache.containsValue(string)) {
+			return null;
+		}
+		return uuidCache.get(string);
 	}
 }

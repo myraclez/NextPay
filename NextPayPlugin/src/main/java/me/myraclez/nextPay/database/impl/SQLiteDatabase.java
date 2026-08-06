@@ -73,25 +73,30 @@ public class SQLiteDatabase implements Database {
 	}
 
 	public void createTables() {
-		String balances = """
-            CREATE TABLE IF NOT EXISTS npbalances (
+		final String balances = """
+            CREATE TABLE IF NOT EXISTS np_balances (
                 uuid TEXT NOT NULL PRIMARY KEY,
                 balance REAL NOT NULL DEFAULT 0.0
             );
             """;
 
-		String settings = """
-            CREATE TABLE IF NOT EXISTS npsettings (
+		final String settings = """
+            CREATE TABLE IF NOT EXISTS np_settings (
                 uuid TEXT NOT NULL PRIMARY KEY,
                 payments INTEGER NOT NULL DEFAULT 0,
                 notifications INTEGER NOT NULL DEFAULT 0
             );
             """;
+		
+		final String player_names = "CREATE TABLE IF NOT EXISTS np_player_names (" +
+				"uuid TEXT NOT NULL PRIMARY KEY," +
+				"name TEXT NOT NULL);";
 
 		try (Connection conn = dataSource.getConnection();
 			 Statement stmt = conn.createStatement()) {
 			stmt.execute(balances);
 			stmt.execute(settings);
+			stmt.execute(player_names);
 		} catch (SQLException e) {
 			plugin.getLogger().severe("Failed to create tables: " + e.getMessage());
 		}
@@ -109,7 +114,7 @@ public class SQLiteDatabase implements Database {
 		new BukkitRunnable() {
 			@Override
 			public void run() {
-				final String sql = "INSERT OR IGNORE INTO npbalances (uuid, balance) VALUES (?, 0.0)";
+				final String sql = "INSERT OR IGNORE INTO np_balances (uuid, balance) VALUES (?, 0.0)";
 				try (Connection connection = dataSource.getConnection();
 					 PreparedStatement stmt = connection.prepareStatement(sql)) {
 					stmt.setString(1, uuid.toString());
@@ -131,7 +136,7 @@ public class SQLiteDatabase implements Database {
 		new BukkitRunnable() {
 			@Override
 			public void run() {
-				final String sql = "SELECT 1 FROM npbalances WHERE uuid = ?";
+				final String sql = "SELECT 1 FROM np_balances WHERE uuid = ?";
 				try (Connection connection = dataSource.getConnection();
 					 PreparedStatement stmt = connection.prepareStatement(sql)) {
 					stmt.setString(1, player.toString());
@@ -150,7 +155,7 @@ public class SQLiteDatabase implements Database {
 
 	public void createAccount(UUID uuid) {
 
-		final String sql = "INSERT OR IGNORE INTO npbalances (uuid, balance) VALUES (?, 0.0)";
+		final String sql = "INSERT OR IGNORE INTO np_balances (uuid, balance) VALUES (?, 0.0)";
 		try (Connection connection = dataSource.getConnection();
 			 PreparedStatement stmt = connection.prepareStatement(sql)) {
 			stmt.setString(1, uuid.toString());
@@ -163,7 +168,7 @@ public class SQLiteDatabase implements Database {
 
 	public boolean hasAccount(UUID player) {
 
-		final String sql = "SELECT 1 FROM npbalances WHERE uuid = ?";
+		final String sql = "SELECT 1 FROM np_balances WHERE uuid = ?";
 
 		try (Connection connection = dataSource.getConnection();
 			 PreparedStatement stmt = connection.prepareStatement(sql)) {
@@ -181,7 +186,7 @@ public class SQLiteDatabase implements Database {
 	@Override
 	public double getBalance(UUID player) {
 
-		String sql = "SELECT balance FROM npbalances WHERE uuid = ?";
+		String sql = "SELECT balance FROM np_balances WHERE uuid = ?";
 		double balance = 0.0;
 
 		try (Connection connection = dataSource.getConnection();
@@ -206,7 +211,7 @@ public class SQLiteDatabase implements Database {
 		new BukkitRunnable() {
 			@Override
 			public void run() {
-				String sql = "SELECT balance FROM npbalances WHERE uuid = ?";
+				String sql = "SELECT balance FROM np_balances WHERE uuid = ?";
 				double balance = 0.0;
 
 				try (Connection connection = dataSource.getConnection();
@@ -234,7 +239,7 @@ public class SQLiteDatabase implements Database {
 
 		double newBalance = current - amount;
 
-		String sql = "INSERT OR REPLACE INTO npbalances (uuid, balance) VALUES (?, ?)";
+		String sql = "INSERT OR REPLACE INTO np_balances (uuid, balance) VALUES (?, ?)";
 		try (Connection conn = dataSource.getConnection();
 			 PreparedStatement stmt = conn.prepareStatement(sql)) {
 			stmt.setString(1, player.toString());
@@ -261,7 +266,7 @@ public class SQLiteDatabase implements Database {
 			new BukkitRunnable() {
 				@Override
 				public void run() {
-					String sql = "INSERT OR REPLACE INTO npbalances (uuid, balance) VALUES (?, ?)";
+					String sql = "INSERT OR REPLACE INTO np_balances (uuid, balance) VALUES (?, ?)";
 					try (Connection conn = dataSource.getConnection();
 						 PreparedStatement stmt = conn.prepareStatement(sql)) {
 						stmt.setString(1, uuid.toString());
@@ -284,7 +289,7 @@ public class SQLiteDatabase implements Database {
 		double current = getBalance(player);
 		double newBalance = current + amount;
 
-		String sql = "INSERT OR REPLACE INTO npbalances (uuid, balance) VALUES (?, ?)";
+		String sql = "INSERT OR REPLACE INTO np_balances (uuid, balance) VALUES (?, ?)";
 		try (Connection conn = dataSource.getConnection();
 			 PreparedStatement stmt = conn.prepareStatement(sql)) {
 			stmt.setString(1, player.toString());
@@ -305,7 +310,7 @@ public class SQLiteDatabase implements Database {
 		getBalanceAsync(uuid).thenCompose(current -> {
 			double newBalance = current + amount;
 
-			String sql = "INSERT OR REPLACE INTO npbalances (uuid, balance) VALUES (?, ?)";
+			String sql = "INSERT OR REPLACE INTO np_balances (uuid, balance) VALUES (?, ?)";
 			new BukkitRunnable() {
 				@Override
 				public void run() {
@@ -333,7 +338,7 @@ public class SQLiteDatabase implements Database {
 		new BukkitRunnable() {
 			@Override
 			public void run() {
-				String sql = "SELECT uuid, balance FROM npbalances ORDER BY balance DESC";
+				String sql = "SELECT uuid, balance FROM np_balances ORDER BY balance DESC";
 				List<Map.Entry<UUID, Double>> result = new ArrayList<>();
 				try (Connection conn = dataSource.getConnection();
 					 PreparedStatement statement = conn.prepareStatement(sql);
@@ -365,7 +370,7 @@ public class SQLiteDatabase implements Database {
 		new BukkitRunnable() {
 			@Override
 			public void run() {
-				final String sql = "INSERT OR IGNORE INTO npsettings (uuid, payments, notifications) VALUES (?, 1, 1)";
+				final String sql = "INSERT OR IGNORE INTO np_settings (uuid, payments, notifications) VALUES (?, 1, 1)";
 				try (Connection connection = dataSource.getConnection();
 					 PreparedStatement stmt = connection.prepareStatement(sql)) {
 					stmt.setString(1, player.toString());
@@ -383,7 +388,7 @@ public class SQLiteDatabase implements Database {
 
 		List<PlayerSettings> list = new ArrayList<>();
 
-		final String sql = "SELECT uuid, payments, notifications FROM npsettings;";
+		final String sql = "SELECT uuid, payments, notifications FROM np_settings;";
 
 		new BukkitRunnable() {
 			@Override
@@ -406,7 +411,7 @@ public class SQLiteDatabase implements Database {
 
 	@Override
 	public void saveBalance(UUID uuid, double balance) {
-		final String sql = "INSERT OR REPLACE INTO npbalances (uuid, balance) VALUES (?, ?);";
+		final String sql = "INSERT OR REPLACE INTO np_balances (uuid, balance) VALUES (?, ?);";
 		new BukkitRunnable() {
 			@Override
 			public void run() {
@@ -424,7 +429,7 @@ public class SQLiteDatabase implements Database {
 
 	@Override
 	public void savePlayerSettings(PlayerSettings settings) {
-		final String sql = "INSERT OR REPLACE INTO npsettings (uuid, payments, notifications) VALUES (?, ? ,?);";
+		final String sql = "INSERT OR REPLACE INTO np_settings (uuid, payments, notifications) VALUES (?, ? ,?);";
 		new BukkitRunnable() {
 			@Override
 			public void run() {
@@ -450,7 +455,7 @@ public class SQLiteDatabase implements Database {
 
 			@Override
 			public void run() {
-				String sql = "SELECT payments, notifications FROM npsettings WHERE uuid = ?";
+				String sql = "SELECT payments, notifications FROM np_settings WHERE uuid = ?";
 				try (Connection conn = dataSource.getConnection();
 					 PreparedStatement statement = conn.prepareStatement(sql)) {
 					statement.setString(1, player.toString());
@@ -470,5 +475,55 @@ public class SQLiteDatabase implements Database {
 			}
 		}.runTaskAsynchronously(plugin);
 		return future;
+	}
+
+	@Override
+	public CompletableFuture<List<Map.Entry<UUID, String>>> getUsernames() {
+		final CompletableFuture<List<Map.Entry<UUID, String>>> future = new CompletableFuture<>();
+
+		final List<Map.Entry<UUID, String>> list = new ArrayList<>();
+
+		final String sql = "SELECT * FROM np_player_names;";
+
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				try (Connection connection = dataSource.getConnection();
+					 Statement statement = connection.createStatement()) {
+					ResultSet resultSet = statement.executeQuery(sql);
+
+					while (resultSet.next()) {
+						list.add(Map.entry(UUID.fromString(resultSet.getString("uuid")),  resultSet.getString("name")));
+					}
+
+					future.complete(list);
+
+				} catch (SQLException e) {
+					plugin.getLogger().severe("Couldn't get all usernames, baltop will not have any names shown on the heads :" + e.getMessage());
+					future.completeExceptionally(e);
+				}
+			}
+		}.runTaskAsynchronously(plugin);
+
+		return future;
+	}
+
+	@Override
+	public void updatePlayer(UUID uuid, String name) {
+		final String sql = "INSERT OR REPLACE INTO np_player_names (uuid, name) VALUES (?, ?);";
+
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				try (Connection connection = dataSource.getConnection();
+				PreparedStatement statement = connection.prepareStatement(sql)){
+					statement.setString(1, uuid.toString());
+					statement.setString(2, name);
+					statement.executeUpdate();
+				} catch (SQLException e) {
+					plugin.getLogger().severe("Couldn't save players name with uuid: " + uuid + " : " + e.getMessage());
+				}
+			}
+		}.runTaskAsynchronously(plugin);
 	}
 }

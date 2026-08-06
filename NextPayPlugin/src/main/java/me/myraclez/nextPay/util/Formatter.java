@@ -5,11 +5,9 @@ import java.util.regex.Pattern;
 
 public class Formatter {
 
-	private static final DecimalFormat decimalFormat = new DecimalFormat("#.##");
-
-	private static final Pattern PLAIN_NUMBER = Pattern.compile("-?\\d+(\\.\\d+)?");
-
 	public static String format(double amount) {
+
+		final DecimalFormat decimalFormat = new DecimalFormat("#.##");
 
 		if (amount >= 1.0E12) {
 			return decimalFormat.format(amount / 1.0E12) + "T";
@@ -29,13 +27,13 @@ public class Formatter {
 			throw new IllegalArgumentException("Input cannot be null or empty");
 		}
 
-		String trimmed = formatted.trim();
+		final String trimmed = formatted.trim();
 		if (trimmed.isEmpty()) {
 			throw new IllegalArgumentException("Input cannot be blank");
 		}
 
-		char suffix = Character.toUpperCase(trimmed.charAt(trimmed.length() - 1));
-		long multiplier;
+		final char suffix = Character.toUpperCase(trimmed.charAt(trimmed.length() - 1));
+		final long multiplier;
 
 		switch (suffix) {
 			case 'K': multiplier = 1_000L; break;
@@ -56,6 +54,9 @@ public class Formatter {
 	}
 
 	private static double parseStrict(String value) {
+
+		final Pattern PLAIN_NUMBER = Pattern.compile("-?\\d+(\\.\\d+)?");
+
 		if (!PLAIN_NUMBER.matcher(value).matches()) {
 			throw new IllegalArgumentException("Invalid number format: " + value);
 		}

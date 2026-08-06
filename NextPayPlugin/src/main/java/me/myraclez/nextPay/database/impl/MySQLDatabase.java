@@ -70,14 +70,14 @@ public class MySQLDatabase implements Database {
 	}
 
 	public void createTables() {
-		String balances = """
+		final String balances = """
 				CREATE TABLE IF NOT EXISTS npbalances (
 				uuid CHAR(36) NOT NULL PRIMARY KEY,
 				balance REAL NOT NULL DEFAULT 0.0
 				   );
 				""";
 
-		String settings = """
+		final String settings = """
 				    CREATE TABLE IF NOT EXISTS npsettings (
 					uuid VARCHAR(36) NOT NULL PRIMARY KEY,
 					payments BOOLEAN NOT NULL DEFAULT FALSE,
@@ -85,10 +85,15 @@ public class MySQLDatabase implements Database {
 				    );
 				""";
 
+		final String player_names = "CREATE TABLE IF NOT EXISTS np_player_names (" +
+				"uuid CHAR(36) NOT NULL PRIMARY KEY," +
+				"name VARCHAR(16) NOT NULL);";
+
 		try (Connection conn = dataSource.getConnection();
 			 Statement stmt = conn.createStatement()) {
 			stmt.execute(balances);
 			stmt.execute(settings);
+			stmt.execute(player_names);
 		} catch (SQLException e) {
 			plugin.getLogger().severe("Failed to create tables: " + e.getMessage());
 		}
@@ -288,12 +293,13 @@ public class MySQLDatabase implements Database {
 		double current = getBalance(player);
 		double newBalance = current + amount;
 
-		String sql = "INSERT INTO npbalances (uuid, balance) VALUES (?, ?) AS new " +
-				"ON DUPLICATE KEY UPDATE balance = new.balance";
+		String sql = "INSERT INTO npbalances (uuid, balance) VALUES (?, ?) " +
+				"ON DUPLICATE KEY UPDATE balance = ?";
 		try (Connection conn = dataSource.getConnection();
 			 PreparedStatement stmt = conn.prepareStatement(sql)) {
 			stmt.setString(1, player.toString());
 			stmt.setDouble(2, newBalance);
+			stmt.setDouble(3, newBalance);
 			stmt.executeUpdate();
 		} catch (SQLException e) {
 			plugin.getLogger().severe("Failed to deposit: " + e.getMessage());
@@ -476,5 +482,56 @@ public class MySQLDatabase implements Database {
 			}
 		}.runTaskAsynchronously(plugin);
 		return future;
+	}
+
+	@Override
+	public CompletableFuture<List<Map.Entry<UUID, String>>> getUsernames() {
+		final CompletableFuture<List<Map.Entry<UUID, String>>> future = new CompletableFuture<>();
+
+		final List<Map.Entry<UUID, String>> list = new ArrayList<>();
+
+		final String sql = "SELECT * FROM np_player_names;";
+
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				try (Connection connection = dataSource.getConnection();
+				Statement statement = connection.createStatement()) {
+					ResultSet resultSet = statement.executeQuery(sql);
+
+					while (resultSet.next()) {
+						list.add(Map.entry(UUID.fromString(resultSet.getString("uuid")),  resultSet.getString("name")));
+					}
+
+					future.complete(list);
+
+				} catch (SQLException e) {
+					plugin.getLogger().severe("Couldn't get all usernames, baltop will not have any names shown on the heads :" + e.getMessage());
+					future.completeExceptionally(e);
+				}
+			}
+		}.runTaskAsynchronously(plugin);
+
+		return future;
+	}
+
+	@Override
+	public void updatePlayer(UUID uuid, String name) {
+		final String sql = "INSERT INTO np_player_names (uuid, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = ?;";
+
+		new BukkitRunnable() {
+			@Override
+			public void run() {
+				try (Connection connection = dataSource.getConnection();
+					 PreparedStatement statement = connection.prepareStatement(sql)){
+					statement.setString(1, uuid.toString());
+					statement.setString(2, name);
+					statement.setString(3, name);
+					statement.executeUpdate();
+				} catch (SQLException e) {
+					plugin.getLogger().severe("Couldn't save players name with uuid: " + uuid + " : " + e.getMessage());
+				}
+			}
+		}.runTaskAsynchronously(plugin);
 	}
 }

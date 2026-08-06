@@ -27,5 +27,7 @@ public interface Database {
 	CompletableFuture<List<PlayerSettings>> getAllSettings();
 	void saveBalance(UUID uuid, double balance);
 	void savePlayerSettings(PlayerSettings settings);
-	public CompletableFuture<PlayerSettings> getSettingsAsync(UUID uuid);
+	CompletableFuture<PlayerSettings> getSettingsAsync(UUID uuid);
+	CompletableFuture<List<Map.Entry<UUID, String>>> getUsernames();
+	void updatePlayer(UUID uuid, String name);
 }

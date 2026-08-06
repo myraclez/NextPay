@@ -3,30 +3,30 @@ package me.myraclez.nextPay.command;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.suggestion.SuggestionProvider;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import me.myraclez.nextPay.NextPay;
 import me.myraclez.nextPay.util.ColorUtil;
 import me.myraclez.nextPay.util.Formatter;
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
-import org.bukkit.event.command.UnknownCommandEvent;
+
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 public class EconomyCommand {
 
-	private static final SuggestionProvider<CommandSourceStack> OFFLINE_PLAYER_SUGGESTIONS = (ctx, builder) -> {
-		String remaining = builder.getRemainingLowerCase();
-		for (OfflinePlayer offlinePlayer : Bukkit.getOfflinePlayers()) {
-			String name = offlinePlayer.getName();
-			if (name != null && name.toLowerCase().startsWith(remaining)) {
+	private static CompletableFuture<Suggestions> suggestUsernames(NextPay plugin, CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
+		String remaining = builder.getRemaining().toLowerCase();
+		for (String name : plugin.getEconomyManager().getUsernames()) {
+			if (name.toLowerCase().startsWith(remaining)) {
 				builder.suggest(name);
 			}
 		}
 		return builder.buildFuture();
-	};
+	}
 
 	/*
 
@@ -40,12 +40,12 @@ public class EconomyCommand {
 				.requires(source -> source.getSender().hasPermission("nextpay.admin"))
 				.then(Commands.literal("give")
 						.then(Commands.argument("player", StringArgumentType.word())
-								.suggests(OFFLINE_PLAYER_SUGGESTIONS)
+								.suggests((ctx, builder) -> suggestUsernames(plugin, ctx, builder))
 								.then(Commands.argument("amount", StringArgumentType.word())
 										.executes(ctx -> give(plugin, ctx)))))
 				.then(Commands.literal("take")
 						.then(Commands.argument("player", StringArgumentType.word())
-								.suggests(OFFLINE_PLAYER_SUGGESTIONS)
+								.suggests((ctx, builder) -> suggestUsernames(plugin, ctx, builder))
 								.then(Commands.argument("amount", StringArgumentType.word())
 										.executes(ctx -> take(plugin, ctx)))))
 				.then(Commands.literal("set")
@@ -54,14 +54,14 @@ public class EconomyCommand {
 										.executes(ctx -> set(plugin, ctx)))))
 				.then(Commands.literal("clear")
 						.then(Commands.argument("player", StringArgumentType.word())
-								.suggests(OFFLINE_PLAYER_SUGGESTIONS)
+								.suggests((ctx, builder) -> suggestUsernames(plugin, ctx, builder))
 								.executes(ctx -> clear(plugin, ctx))))
 				.build();
 	}
 
 	/*
 
-		Helper methods
+		Give
 
 	 */
 
@@ -69,67 +69,111 @@ public class EconomyCommand {
 		Player player = (Player) ctx.getSource().getSender();
 		if (player == null) return Command.SINGLE_SUCCESS;
 
-		OfflinePlayer target = requireExistingPlayer(player, StringArgumentType.getString(ctx, "player"));
-		if (target == null) return Command.SINGLE_SUCCESS;
+		String targetName = StringArgumentType.getString(ctx, "player");
 
-		Double amount = requireValidAmount(player, StringArgumentType.getString(ctx, "amount"));
+		if (!plugin.getEconomyManager().isPlayer(targetName)) {
+			plugin.getMessageManager().sendMessage(player, "invalid-player");
+			return 1;
+		}
+
+		UUID targetUUID = plugin.getEconomyManager().getUuid(targetName);
+
+		Double amount = validAmount(plugin, player, StringArgumentType.getString(ctx, "amount"));
 		if (amount == null) return Command.SINGLE_SUCCESS;
 
-		plugin.getEconomyManager().deposit(player.getUniqueId(), amount);
+		plugin.getEconomyManager().deposit(targetUUID, amount);
 		plugin.getMessageManager().sendMessage(player, "messages.added",
-				"%player%", target.getName(), "%amount%", String.valueOf(Formatter.format(amount)));
+				"%player%", targetName, "%amount%", String.valueOf(Formatter.format(amount)));
 		return Command.SINGLE_SUCCESS;
 	}
+
+	/*
+
+			Take
+
+	 */
 
 	private static int take(NextPay plugin, CommandContext<CommandSourceStack> ctx) {
 		Player player = (Player) ctx.getSource().getSender();
 		if (player == null) return Command.SINGLE_SUCCESS;
 
-		OfflinePlayer target = requireExistingPlayer(player, StringArgumentType.getString(ctx, "player"));
-		if (target == null) return Command.SINGLE_SUCCESS;
+		String targetName = StringArgumentType.getString(ctx, "player");
 
-		Double amount = requireValidAmount(player, StringArgumentType.getString(ctx, "amount"));
+		if (!plugin.getEconomyManager().isPlayer(targetName)) {
+			plugin.getMessageManager().sendMessage(player, "invalid-player");
+			return 1;
+		}
+
+		UUID targetUUID = plugin.getEconomyManager().getUuid(targetName);
+
+		Double amount = validAmount(plugin, player, StringArgumentType.getString(ctx, "amount"));
 		if (amount == null) return Command.SINGLE_SUCCESS;
 
-		if (!plugin.getEconomyManager().has(target.getUniqueId(), amount)) {
+
+		if (!plugin.getEconomyManager().has(targetUUID, amount)) {
 			plugin.getMessageManager().sendMessage(player, "other-not-enough-money");
 			return Command.SINGLE_SUCCESS;
 		}
 
-		plugin.getEconomyManager().withdraw(target.getUniqueId(), amount);
+		plugin.getEconomyManager().withdraw(targetUUID, amount);
 		plugin.getMessageManager().sendMessage(player, "messages.removed",
-				"%player%", target.getName(), "%amount%", String.valueOf(Formatter.format(amount)));
+				"%player%", targetName, "%amount%", String.valueOf(Formatter.format(amount)));
 		return Command.SINGLE_SUCCESS;
 	}
+
+	/*
+
+			Set
+
+	 */
 
 	private static int set(NextPay plugin, CommandContext<CommandSourceStack> ctx) {
 		Player player = (Player) ctx.getSource().getSender();
 		if (player == null) return Command.SINGLE_SUCCESS;
 
-		OfflinePlayer target = requireExistingPlayer(player, StringArgumentType.getString(ctx, "player"));
-		if (target == null) return Command.SINGLE_SUCCESS;
+		String targetName = StringArgumentType.getString(ctx, "player");
 
-		Double amount = requireValidAmount(player, StringArgumentType.getString(ctx, "amount"));
+		if (!plugin.getEconomyManager().isPlayer(targetName)) {
+			plugin.getMessageManager().sendMessage(player, "invalid-player");
+			return 1;
+		}
+
+		UUID targetUUID = plugin.getEconomyManager().getUuid(targetName);
+
+		Double amount = validAmount(plugin, player, StringArgumentType.getString(ctx, "amount"));
 		if (amount == null) return Command.SINGLE_SUCCESS;
 
-		double before = plugin.getEconomyManager().getBalance(target.getUniqueId());
-		plugin.getEconomyManager().withdraw(target.getUniqueId(), before);
-		plugin.getEconomyManager().deposit(target.getUniqueId(), amount);
+		double before = plugin.getEconomyManager().getBalance(targetUUID);
+		plugin.getEconomyManager().withdraw(targetUUID, before);
+		plugin.getEconomyManager().deposit(targetUUID, amount);
 		plugin.getMessageManager().sendMessage(player, "messages.set",
-				"%player%", target.getName(), "%amount%", String.valueOf(Formatter.format(amount)));
+				"%player%", targetName, "%amount%", String.valueOf(Formatter.format(amount)));
 		return Command.SINGLE_SUCCESS;
 	}
+
+	/*
+
+			Clear
+
+	 */
 
 	private static int clear(NextPay plugin, CommandContext<CommandSourceStack> ctx) {
 		Player player = (Player) ctx.getSource().getSender();
 		if (player == null) return Command.SINGLE_SUCCESS;
 
-		OfflinePlayer target = requireExistingPlayer(player, StringArgumentType.getString(ctx, "player"));
-		if (target == null) return Command.SINGLE_SUCCESS;
+		String targetName = StringArgumentType.getString(ctx, "player");
 
-		double before = plugin.getEconomyManager().getBalance(target.getUniqueId());
-		plugin.getEconomyManager().withdraw(target.getUniqueId(), before);
-		plugin.getMessageManager().sendMessage(player, "messages.cleared", "%player%", target.getName());
+		if (!plugin.getEconomyManager().isPlayer(targetName)) {
+			plugin.getMessageManager().sendMessage(player, "error.invalid-player");
+			return 1;
+		}
+
+		UUID targetUUID = plugin.getEconomyManager().getUuid(targetName);
+
+		double before = plugin.getEconomyManager().getBalance(targetUUID);
+
+		plugin.getEconomyManager().withdraw(targetUUID, before);
+		plugin.getMessageManager().sendMessage(player, "messages.cleared", "%player%", targetName);
 		return Command.SINGLE_SUCCESS;
 	}
 
@@ -139,20 +183,11 @@ public class EconomyCommand {
 
 	 */
 
-	private static OfflinePlayer requireExistingPlayer(Player sender, String name) {
-		OfflinePlayer target = Bukkit.getOfflinePlayer(name);
-		if (!target.hasPlayedBefore()) {
-			sender.sendMessage(ColorUtil.colorize("<red>This player doesn't exist"));
-			return null;
-		}
-		return target;
-	}
-
-	private static Double requireValidAmount(Player sender, String raw) {
+	private static Double validAmount(NextPay plugin, Player sender, String raw) {
 		try {
 			return Formatter.deformat(raw);
 		} catch (Exception e) {
-			sender.sendMessage(ColorUtil.colorize("<red>Invalid Amount"));
+			plugin.getMessageManager().sendMessage(sender, "error.invalid-amount");
 			return null;
 		}
 	}
