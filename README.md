@@ -22,5 +22,4 @@ inside your plugin.yml
 
 All methods are accessed through NextPayAPI interface.
 
-To get the API instance:
-    NextPayAPI.get()
+To get the API instance: NextPayAPI#get
