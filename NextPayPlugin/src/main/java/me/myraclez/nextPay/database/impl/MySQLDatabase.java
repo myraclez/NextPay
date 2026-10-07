@@ -6,6 +6,7 @@ import lombok.Getter;
 import me.myraclez.nextPay.NextPay;
 import me.myraclez.nextPay.database.Database;
 import me.myraclez.nextPayAPI.PlayerSettings;
+import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.scheduler.BukkitRunnable;
 
@@ -42,7 +43,10 @@ public class MySQLDatabase implements Database {
 	public void connect() {
 		HikariConfig config = new HikariConfig();
 		config.setJdbcUrl(String.format(
-				"jdbc:mysql://%s:%d/%s?useSSL=false&serverTimezone=UTC",
+				"jdbc:mysql://%s:%d/%s" +
+						"?useSSL=false" +
+						"&allowPublicKeyRetrieval=true" +
+						"&serverTimezone=UTC",
 				host,
 				port,
 				database
@@ -54,8 +58,7 @@ public class MySQLDatabase implements Database {
 		try (Connection connection = dataSource.getConnection()) {
 			plugin.getLogger().info("Successfully connected to MySQL!");
 		} catch (SQLException e) {
-			plugin.getLogger().severe("Failed to connect to MySQL!");
-			e.printStackTrace();
+			plugin.getLogger().severe("Failed to connect to MySQL!" + e.getMessage());
 		}
 		createTables();
 		}
@@ -506,8 +509,8 @@ public class MySQLDatabase implements Database {
 					future.complete(list);
 
 				} catch (SQLException e) {
-					plugin.getLogger().severe("Couldn't get all usernames, baltop will not have any names shown on the heads :" + e.getMessage());
-					future.completeExceptionally(e);
+					plugin.getLogger().severe("Couldn't get all usernames:" + e.getMessage());
+					Bukkit.getPluginManager().disablePlugin(plugin);
 				}
 			}
 		}.runTaskAsynchronously(plugin);

@@ -9,6 +9,9 @@ load: POSTWORLD
 depend:
   - Vault
 
+softdepend:
+  - PlaceholderAPI
+
 authors: [ myraclez ]
 
 libraries:

@@ -13,6 +13,7 @@ import me.myraclez.nextPay.listener.JoinListener;
 import me.myraclez.nextPay.manager.EconomyManager;
 import me.myraclez.nextPay.manager.GuiConfigManager;
 import me.myraclez.nextPay.manager.MessageManager;
+import me.myraclez.nextPay.placeholder.PlaceholderApiHook;
 import me.myraclez.nextPayAPI.NextPayAPI;
 import me.myraclez.nextPayAPI.NextPayProvider;
 import me.myraclez.nextPayAPI.PlayerSettings;
@@ -22,6 +23,7 @@ import org.bukkit.plugin.ServicePriority;
 import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.List;
+import java.util.Locale;
 
 public final class NextPay extends JavaPlugin {
 
@@ -42,6 +44,8 @@ public final class NextPay extends JavaPlugin {
 
 	@Override
 	public void onEnable() {
+		long startupTime = System.currentTimeMillis();
+
 		api = new NextPayAPIImpl(this);
 
 		NextPayProvider.register(api);
@@ -57,6 +61,15 @@ public final class NextPay extends JavaPlugin {
 
 		registerCommands();
 		registerListeners();
+
+		if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+			getLogger().info("PlaceholderAPI registered! Hooking now...");
+			new PlaceholderApiHook(this);
+		} else {
+			getLogger().severe("PlaceholderAPI is missing and placeholder will not work!");
+		}
+
+		this.getLogger().info("EnabledLif NextPay in " + (System.currentTimeMillis() - startupTime) + "ms");
 	}
 
 	@Override
@@ -97,16 +110,17 @@ public final class NextPay extends JavaPlugin {
 	}
 
 	public void initializeDatabase() {
-		if (getConfig().getString("database.type").equalsIgnoreCase("sqlite")) {
+		String type = getConfig().getString("database.type").toLowerCase(Locale.ROOT);
+
+		if (type.equals("sqlite")) {
 			database = new SQLiteDatabase(this);
 			database.connect();
-		} else if (getConfig().getString("database.type").equalsIgnoreCase("mysql")) {
+		} else if (type.equals("mysql")) {
 			database = new MySQLDatabase(this);
 			database.connect();
 		} else {
-			getLogger().severe("Invalid database type, defaulting to sqlite!");
-			database = new SQLiteDatabase(this);
-			database.connect();
+			getLogger().severe("Invalid database type, disabling");
+			Bukkit.getPluginManager().disablePlugin(this);
 		}
 	}
 
