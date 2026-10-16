@@ -9,8 +9,8 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import me.myraclez.nextPay.NextPay;
-import me.myraclez.nextPay.util.ColorUtil;
-import me.myraclez.nextPay.util.Formatter;
+import net.klyde.formattingengine.NumberFormatter;
+import net.klyde.formattingengine.NumberParser;
 import org.bukkit.entity.Player;
 
 import java.util.UUID;
@@ -50,6 +50,7 @@ public class EconomyCommand {
 										.executes(ctx -> take(plugin, ctx)))))
 				.then(Commands.literal("set")
 						.then(Commands.argument("player", StringArgumentType.word())
+								.suggests((ctx, builder) -> suggestUsernames(plugin, ctx, builder))
 								.then(Commands.argument("amount", StringArgumentType.word())
 										.executes(ctx -> set(plugin, ctx)))))
 				.then(Commands.literal("clear")
@@ -72,7 +73,7 @@ public class EconomyCommand {
 		String targetName = StringArgumentType.getString(ctx, "player");
 
 		if (!plugin.getEconomyManager().isPlayer(targetName)) {
-			plugin.getMessageManager().sendMessage(player, "invalid-player");
+			plugin.getMessageManager().sendMessage(player, "error.invalid-player");
 			return 1;
 		}
 
@@ -83,7 +84,7 @@ public class EconomyCommand {
 
 		plugin.getEconomyManager().deposit(targetUUID, amount);
 		plugin.getMessageManager().sendMessage(player, "messages.added",
-				"%player%", targetName, "%amount%", String.valueOf(Formatter.format(amount)));
+				"%player%", targetName, "%amount%", String.valueOf(NumberFormatter.compact(amount, 2)));
 		return Command.SINGLE_SUCCESS;
 	}
 
@@ -100,7 +101,7 @@ public class EconomyCommand {
 		String targetName = StringArgumentType.getString(ctx, "player");
 
 		if (!plugin.getEconomyManager().isPlayer(targetName)) {
-			plugin.getMessageManager().sendMessage(player, "invalid-player");
+			plugin.getMessageManager().sendMessage(player, "error.invalid-player");
 			return 1;
 		}
 
@@ -111,13 +112,13 @@ public class EconomyCommand {
 
 
 		if (!plugin.getEconomyManager().has(targetUUID, amount)) {
-			plugin.getMessageManager().sendMessage(player, "other-not-enough-money");
+			plugin.getMessageManager().sendMessage(player, "error.other-not-enough-money");
 			return Command.SINGLE_SUCCESS;
 		}
 
 		plugin.getEconomyManager().withdraw(targetUUID, amount);
 		plugin.getMessageManager().sendMessage(player, "messages.removed",
-				"%player%", targetName, "%amount%", String.valueOf(Formatter.format(amount)));
+				"%player%", targetName, "%amount%", String.valueOf(NumberFormatter.compact(amount, 2)));
 		return Command.SINGLE_SUCCESS;
 	}
 
@@ -134,7 +135,7 @@ public class EconomyCommand {
 		String targetName = StringArgumentType.getString(ctx, "player");
 
 		if (!plugin.getEconomyManager().isPlayer(targetName)) {
-			plugin.getMessageManager().sendMessage(player, "invalid-player");
+			plugin.getMessageManager().sendMessage(player, "error.invalid-player");
 			return 1;
 		}
 
@@ -147,7 +148,7 @@ public class EconomyCommand {
 		plugin.getEconomyManager().withdraw(targetUUID, before);
 		plugin.getEconomyManager().deposit(targetUUID, amount);
 		plugin.getMessageManager().sendMessage(player, "messages.set",
-				"%player%", targetName, "%amount%", String.valueOf(Formatter.format(amount)));
+				"%player%", targetName, "%amount%", String.valueOf(NumberFormatter.compact(amount, 2)));
 		return Command.SINGLE_SUCCESS;
 	}
 
@@ -185,8 +186,8 @@ public class EconomyCommand {
 
 	private static Double validAmount(NextPay plugin, Player sender, String raw) {
 		try {
-			return Formatter.deformat(raw);
-		} catch (Exception e) {
+			return NumberParser.parse(raw);
+		} catch (NumberFormatException e) {
 			plugin.getMessageManager().sendMessage(sender, "error.invalid-amount");
 			return null;
 		}

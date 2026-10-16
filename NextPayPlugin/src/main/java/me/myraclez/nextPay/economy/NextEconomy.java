@@ -130,6 +130,8 @@ public class NextEconomy implements Economy {
 
 	@Override
 	public EconomyResponse withdrawPlayer(OfflinePlayer player, double amount) {
+		if (amount < 0) return new EconomyResponse(amount, getBalance(player), EconomyResponse.ResponseType.FAILURE, "Amount cannot be negative");
+
 		if (!hasAccount(player)) {
 			createPlayerAccount(player);
 		}

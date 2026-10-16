@@ -108,7 +108,7 @@ public class MySQLDatabase implements Database {
 
 	public void createAccount(UUID uuid) {
 
-		final String sql = "INSERT OR IGNORE INTO npbalances (uuid, balance) VALUES (?, 0.0)";
+		final String sql = "INSERT IGNORE INTO npbalances (uuid, balance) VALUES (?, 0.0)";
 		try (Connection connection = dataSource.getConnection();
 			 PreparedStatement stmt = connection.prepareStatement(sql)) {
 			stmt.setString(1, uuid.toString());
@@ -510,7 +510,12 @@ public class MySQLDatabase implements Database {
 
 				} catch (SQLException e) {
 					plugin.getLogger().severe("Couldn't get all usernames:" + e.getMessage());
-					Bukkit.getPluginManager().disablePlugin(plugin);
+					Bukkit.getScheduler().runTask(plugin, new Runnable() {
+						@Override
+						public void run() {
+							Bukkit.getPluginManager().disablePlugin(plugin);
+						}
+					});
 				}
 			}
 		}.runTaskAsynchronously(plugin);

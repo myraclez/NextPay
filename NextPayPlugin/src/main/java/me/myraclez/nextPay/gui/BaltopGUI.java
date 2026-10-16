@@ -4,7 +4,7 @@ import lombok.Getter;
 import me.myraclez.nextPay.NextPay;
 import me.myraclez.nextPay.manager.GuiConfigManager;
 import me.myraclez.nextPay.util.ColorUtil;
-import me.myraclez.nextPay.util.Formatter;
+import net.klyde.formattingengine.NumberFormatter;
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -18,7 +18,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 import org.jetbrains.annotations.NotNull;
 
-import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -88,7 +87,7 @@ public class BaltopGUI implements InventoryHolder {
 		for (int i = lower; i < upper; i++) {
 			Map.Entry<UUID, Double> entry = balances.get(i);
 			final UUID playerId = entry.getKey();
-			final String formattedBalance = String.valueOf(Formatter.format(entry.getValue()));
+			final String formattedBalance = String.valueOf(NumberFormatter.compact(entry.getValue(), 2));
 			final String position = String.valueOf(i + 1);
 
 			ItemStack head = new ItemStack(Material.PLAYER_HEAD);

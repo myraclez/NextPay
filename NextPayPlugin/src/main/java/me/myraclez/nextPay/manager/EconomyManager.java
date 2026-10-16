@@ -1,6 +1,5 @@
 package me.myraclez.nextPay.manager;
 
-import com.mysql.cj.x.protobuf.Mysqlx;
 import me.myraclez.nextPay.NextPay;
 import me.myraclez.nextPay.database.Database;
 import me.myraclez.nextPayAPI.PlayerSettings;
@@ -9,11 +8,9 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.io.PushbackInputStream;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 public class EconomyManager {
@@ -42,32 +39,37 @@ public class EconomyManager {
 		saveTask = new BukkitRunnable() {
 			@Override
 			public void run() {
-				Iterator<UUID> iterator = unsavedBalances.iterator();
-				while (iterator.hasNext()) {
-					UUID uuid = iterator.next();
-					plugin.getDatabase().saveBalance(uuid, balancesCache.get(uuid));
-					iterator.remove();
-				}
-
-				Iterator<UUID> iterator1 = unsavedSettings.iterator();
-				while (iterator1.hasNext()) {
-					UUID uuid = iterator1.next();
-					plugin.getDatabase().savePlayerSettings(settingsCache.get(uuid));
-					iterator1.remove();
-				}
-
-				Iterator<UUID> iterator2 = unsavedNames.iterator();
-				while (iterator2.hasNext()) {
-					UUID uuid = iterator2.next();
-					database.updatePlayer(uuid, namesCache.get(uuid));
-					iterator2.remove();
-				}
+				saveAll();
 			}
 		}.runTaskTimerAsynchronously(plugin, 20L, plugin.getConfig().getInt("auto-save-interval") * 20L);
 	}
 
-	public void stopTask() {
-		saveTask.cancel();
+	public void shutdown() {
+		if (saveTask != null) saveTask.cancel();
+		saveAll();
+	}
+
+	public synchronized void saveAll() {
+		Iterator<UUID> iterator = unsavedBalances.iterator();
+		while (iterator.hasNext()) {
+			UUID uuid = iterator.next();
+			plugin.getDatabase().saveBalance(uuid, balancesCache.get(uuid));
+			iterator.remove();
+		}
+
+		Iterator<UUID> iterator1 = unsavedSettings.iterator();
+		while (iterator1.hasNext()) {
+			UUID uuid = iterator1.next();
+			plugin.getDatabase().savePlayerSettings(settingsCache.get(uuid));
+			iterator1.remove();
+		}
+
+		Iterator<UUID> iterator2 = unsavedNames.iterator();
+		while (iterator2.hasNext()) {
+			UUID uuid = iterator2.next();
+			database.updatePlayer(uuid, namesCache.get(uuid));
+			iterator2.remove();
+		}
 	}
 
 	private void init() {
@@ -78,7 +80,12 @@ public class EconomyManager {
 			}
 		}).exceptionally(ex -> {
 			plugin.getLogger().severe("Failed to load balances: " + ex.getMessage());
-			Bukkit.getPluginManager().disablePlugin(plugin);
+			Bukkit.getScheduler().runTask(plugin, new Runnable() {
+				@Override
+				public void run() {
+					Bukkit.getPluginManager().disablePlugin(plugin);
+				}
+			});
 			return null;
 		});
 
@@ -88,7 +95,12 @@ public class EconomyManager {
 			}
 		}).exceptionally(ex -> {
 			plugin.getLogger().severe("Failed to load settings: " + ex.getMessage());
-			Bukkit.getPluginManager().disablePlugin(plugin);
+			Bukkit.getScheduler().runTask(plugin, new Runnable() {
+				@Override
+				public void run() {
+					Bukkit.getPluginManager().disablePlugin(plugin);
+				}
+			});
 			return null;
 		});
 

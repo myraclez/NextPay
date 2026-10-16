@@ -3,18 +3,15 @@ package me.myraclez.nextPay.command;
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
-import com.mojang.brigadier.suggestion.SuggestionProvider;
 import com.mojang.brigadier.suggestion.Suggestions;
 import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import me.myraclez.nextPay.NextPay;
-import me.myraclez.nextPay.util.ColorUtil;
-import me.myraclez.nextPay.util.Formatter;
-import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 
+import net.klyde.formattingengine.NumberFormatter;
+import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
 import java.util.UUID;
@@ -48,7 +45,7 @@ public class BalanceCommand {
 	public static int checkOwnBalance(CommandContext<CommandSourceStack> ctx, NextPay plugin) {
 		Player player = (Player) ctx.getSource().getSender();
 		plugin.getMessageManager()
-				.sendMessage(player, "messages.balance-own", "%amount%", Formatter.format(plugin.getEconomy().getBalance(player)));
+				.sendMessage(player, "messages.balance-own", "%amount%", NumberFormatter.compact(plugin.getEconomy().getBalance(player), 2));
 		return Command.SINGLE_SUCCESS;
 	}
 
@@ -64,9 +61,14 @@ public class BalanceCommand {
 		UUID targetUUID = plugin.getEconomyManager().getUuid(targetName);
 
 		plugin.getEconomyManager().getBalanceAsync(targetUUID).thenAccept(balance -> {
-			plugin.getMessageManager()
-					.sendMessage(player, "messages.balance-other", "%player%", targetName,
-							"%amount%", Formatter.format(balance));
+			Bukkit.getScheduler().runTask(plugin, new Runnable() {
+				@Override
+				public void run() {
+					plugin.getMessageManager()
+							.sendMessage(player, "messages.balance-other", "%player%", targetName,
+									"%amount%", NumberFormatter.compact(balance, 2));
+				}
+			});
 		});
 
 		return Command.SINGLE_SUCCESS;

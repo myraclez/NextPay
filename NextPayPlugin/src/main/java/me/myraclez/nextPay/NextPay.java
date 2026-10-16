@@ -13,10 +13,9 @@ import me.myraclez.nextPay.listener.JoinListener;
 import me.myraclez.nextPay.manager.EconomyManager;
 import me.myraclez.nextPay.manager.GuiConfigManager;
 import me.myraclez.nextPay.manager.MessageManager;
-import me.myraclez.nextPay.placeholder.PlaceholderApiHook;
+import me.myraclez.nextPay.placeholder.NextPayExpansion;
 import me.myraclez.nextPayAPI.NextPayAPI;
 import me.myraclez.nextPayAPI.NextPayProvider;
-import me.myraclez.nextPayAPI.PlayerSettings;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.plugin.ServicePriority;
@@ -52,7 +51,10 @@ public final class NextPay extends JavaPlugin {
 
 		saveDefaultConfig();
 
-		initializeDatabase();
+		if (!initializeDatabase()) {
+			return;
+		}
+
 		initializeManagers();
 
 		// Register EconomyProvider using Vault
@@ -64,7 +66,7 @@ public final class NextPay extends JavaPlugin {
 
 		if (Bukkit.getPluginManager().isPluginEnabled("PlaceholderAPI")) {
 			getLogger().info("PlaceholderAPI registered! Hooking now...");
-			new PlaceholderApiHook(this);
+			new NextPayExpansion(this);
 		} else {
 			getLogger().severe("PlaceholderAPI is missing and placeholder will not work!");
 		}
@@ -74,11 +76,11 @@ public final class NextPay extends JavaPlugin {
 
 	@Override
 	public void onDisable() {
+		if (economyManager != null) economyManager.shutdown();
+
 		if (database != null) {
 			database.disconnect();
 		}
-
-		economyManager.stopTask();
 
 		NextPayProvider.unregister();
 	}
@@ -109,7 +111,7 @@ public final class NextPay extends JavaPlugin {
 		Bukkit.getPluginManager().registerEvents(new JoinListener(this), this);
 	}
 
-	public void initializeDatabase() {
+	public boolean initializeDatabase() {
 		String type = getConfig().getString("database.type").toLowerCase(Locale.ROOT);
 
 		if (type.equals("sqlite")) {
@@ -121,7 +123,10 @@ public final class NextPay extends JavaPlugin {
 		} else {
 			getLogger().severe("Invalid database type, disabling");
 			Bukkit.getPluginManager().disablePlugin(this);
+			return false;
 		}
+
+		return true;
 	}
 
 	public void initializeManagers() {

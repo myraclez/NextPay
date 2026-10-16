@@ -9,10 +9,9 @@ import com.mojang.brigadier.tree.LiteralCommandNode;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import me.myraclez.nextPay.NextPay;
-import me.myraclez.nextPay.economy.NextEconomy;
-import me.myraclez.nextPay.util.Formatter;
+import net.klyde.formattingengine.NumberFormatter;
+import net.klyde.formattingengine.NumberParser;
 import org.bukkit.Bukkit;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -64,8 +63,8 @@ public class PayCommand {
 
 									double amount;
 									try {
-										amount = me.myraclez.nextPay.util.Formatter.deformat(rawAmount);
-									} catch (IllegalArgumentException e) {
+										amount = NumberParser.parse(rawAmount);
+									} catch (NumberFormatException e) {
 										plugin.getMessageManager().sendMessage(player, "error.invalid-amount");
 										return Command.SINGLE_SUCCESS;
 									}
@@ -113,14 +112,14 @@ public class PayCommand {
 		}
 
 		plugin.getMessageManager().sendMessage(player, "messages.paid",
-				"%player%", targetName, "%amount%", String.valueOf(me.myraclez.nextPay.util.Formatter.format(amount)));
+				"%player%", targetName, "%amount%", NumberFormatter.format(amount, 2));
 
 		if  (notifications) {
 			Player onlineTarget = Bukkit.getPlayer(targetUUID);
 			if (onlineTarget != null) {
 				onlineTarget.playSound(onlineTarget.getLocation(), Sound.BLOCK_NOTE_BLOCK_BELL, 3, 1);
 				plugin.getMessageManager().sendMessage(onlineTarget, "messages.got-paid",
-						"%player%", player.getName(), "%amount%", String.valueOf(Formatter.format(amount)));
+						"%player%", player.getName(), "%amount%", NumberFormatter.format(amount, 2));
 			}
 
 		}

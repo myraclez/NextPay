@@ -2,16 +2,16 @@ package me.myraclez.nextPay.placeholder;
 
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import me.myraclez.nextPay.NextPay;
-import me.myraclez.nextPay.util.Formatter;
+import net.klyde.formattingengine.NumberFormatter;
 import org.bukkit.OfflinePlayer;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class PlaceholderApiHook extends PlaceholderExpansion {
+public class NextPayExpansion extends PlaceholderExpansion {
 
 	private final NextPay plugin;
 
-	public PlaceholderApiHook(NextPay plugin) {
+	public NextPayExpansion(NextPay plugin) {
 		this.plugin = plugin;
 
 		register();
@@ -35,13 +35,14 @@ public class PlaceholderApiHook extends PlaceholderExpansion {
 
 	@Override
 	public @Nullable String onRequest(OfflinePlayer player, @NotNull String params) {
+		if (player == null) return null;
 
 		final double balance = plugin.getEconomyManager().getBalance(player.getUniqueId());
 
 		if (params.equalsIgnoreCase("balance")) {
 			return String.format("%.0f", balance);
 		} else if (params.equalsIgnoreCase("balance_formatted")) {
-			return Formatter.format(balance);
+			return NumberFormatter.compact(balance, 2);
 		}
 
 		return "Invalid Placeholder!";
