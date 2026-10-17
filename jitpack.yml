@@ -1,4 +1,7 @@
 jdk:
   - openjdk25
+before_install:
+  - curl -fsSL https://repo.maven.apache.org/maven2/org/apache/maven/apache-maven/3.9.9/apache-maven-3.9.9-bin.tar.gz -o /tmp/apache-maven.tar.gz
+  - tar -xzf /tmp/apache-maven.tar.gz -C /tmp
 install:
-  - mvn clean install -DskipTests
+  - /tmp/apache-maven-3.9.9/bin/mvn clean install -DskipTests
