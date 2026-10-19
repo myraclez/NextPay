@@ -421,41 +421,33 @@ public class MySQLDatabase implements Database {
 	@Override
 	public void saveBalance(UUID uuid, double balance) {
 		final String sql = "INSERT INTO npbalances (uuid, balance) VALUES (?, ?) ON DUPLICATE KEY UPDATE balance = ?";
-		new BukkitRunnable() {
-			@Override
-			public void run() {
-				try (Connection conn = dataSource.getConnection();
-					 PreparedStatement preparedStatement = conn.prepareStatement(sql)){
-					preparedStatement.setString(1, uuid.toString());
-					preparedStatement.setDouble(2, balance);
-					preparedStatement.setDouble(3, balance);
-					preparedStatement.executeUpdate();
-				} catch (SQLException e) {
-					plugin.getLogger().severe("Failed to save balance for " + uuid.toString());
-				}
-			}
-		}.runTaskAsynchronously(plugin);
+
+		try (Connection conn = dataSource.getConnection();
+			 PreparedStatement preparedStatement = conn.prepareStatement(sql)){
+			preparedStatement.setString(1, uuid.toString());
+			preparedStatement.setDouble(2, balance);
+			preparedStatement.setDouble(3, balance);
+			preparedStatement.executeUpdate();
+		} catch (SQLException e) {
+			plugin.getLogger().severe("Failed to save balance for " + uuid.toString());
+		}
 	}
 
 	@Override
 	public void savePlayerSettings(PlayerSettings settings) {
 		final String sql = "INSERT INTO npsettings (uuid, payments, notifications) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE payments = ?, notifications = ?";
-		new BukkitRunnable() {
-			@Override
-			public void run() {
-				try (Connection conn = dataSource.getConnection();
-					 PreparedStatement statement = conn.prepareStatement(sql)){
-					statement.setString(1, settings.uuid().toString());
-					statement.setBoolean(2, settings.payments());
-					statement.setBoolean(3, settings.notifications());
-					statement.setBoolean(4, settings.payments());
-					statement.setBoolean(5, settings.notifications());
-					statement.executeUpdate();
-				} catch (SQLException e) {
-					throw new RuntimeException(e);
-				}
-			}
-		}.runTaskAsynchronously(plugin);
+
+		try (Connection conn = dataSource.getConnection();
+			 PreparedStatement statement = conn.prepareStatement(sql)){
+			statement.setString(1, settings.uuid().toString());
+			statement.setBoolean(2, settings.payments());
+			statement.setBoolean(3, settings.notifications());
+			statement.setBoolean(4, settings.payments());
+			statement.setBoolean(5, settings.notifications());
+			statement.executeUpdate();
+		} catch (SQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	@Override
@@ -527,19 +519,14 @@ public class MySQLDatabase implements Database {
 	public void updatePlayer(UUID uuid, String name) {
 		final String sql = "INSERT INTO np_player_names (uuid, name) VALUES (?, ?) ON DUPLICATE KEY UPDATE name = ?;";
 
-		new BukkitRunnable() {
-			@Override
-			public void run() {
-				try (Connection connection = dataSource.getConnection();
-					 PreparedStatement statement = connection.prepareStatement(sql)){
-					statement.setString(1, uuid.toString());
-					statement.setString(2, name);
-					statement.setString(3, name);
-					statement.executeUpdate();
-				} catch (SQLException e) {
-					plugin.getLogger().severe("Couldn't save players name with uuid: " + uuid + " : " + e.getMessage());
-				}
-			}
-		}.runTaskAsynchronously(plugin);
+		try (Connection connection = dataSource.getConnection();
+			 PreparedStatement statement = connection.prepareStatement(sql)){
+			statement.setString(1, uuid.toString());
+			statement.setString(2, name);
+			statement.setString(3, name);
+			statement.executeUpdate();
+		} catch (SQLException e) {
+			plugin.getLogger().severe("Couldn't save players name with uuid: " + uuid + " : " + e.getMessage());
+		}
 	}
 }

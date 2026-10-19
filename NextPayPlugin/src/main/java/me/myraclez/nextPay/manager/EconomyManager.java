@@ -49,7 +49,7 @@ public class EconomyManager {
 		saveAll();
 	}
 
-	public synchronized void saveAll() {
+	public void saveAll() {
 		Iterator<UUID> iterator = unsavedBalances.iterator();
 		while (iterator.hasNext()) {
 			UUID uuid = iterator.next();
